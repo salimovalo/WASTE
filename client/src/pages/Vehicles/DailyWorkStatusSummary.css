@@ -1,0 +1,156 @@
+/* Daily Work Status Summary styles */
+
+.daily-work-status-summary {
+  padding: 24px;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 64px);
+}
+
+/* Summary card */
+.summary-card {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  border: none !important;
+}
+
+.summary-card .ant-card-body {
+  padding: 32px;
+}
+
+/* District cards */
+.district-card {
+  transition: all 0.3s ease;
+  border-radius: 12px !important;
+  height: 100%;
+}
+
+.district-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.district-card .ant-card-body {
+  padding: 24px;
+}
+
+/* Progress circle customization */
+.ant-progress-circle .ant-progress-text {
+  font-weight: bold !important;
+}
+
+/* Statistics customization */
+.ant-statistic-title {
+  font-size: 12px !important;
+  color: #8c8c8c !important;
+  font-weight: 500 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ant-statistic-content {
+  color: #2f3349 !important;
+}
+
+/* Card titles */
+.ant-card-head-title {
+  font-weight: 600 !important;
+  color: #2f3349 !important;
+  font-size: 16px !important;
+}
+
+/* Tags */
+.ant-tag {
+  font-weight: 500 !important;
+  border: none !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 10px !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .daily-work-status-summary {
+    padding: 16px;
+  }
+  
+  .summary-card .ant-card-body {
+    padding: 20px;
+  }
+  
+  .district-card .ant-card-body {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 576px) {
+  .daily-work-status-summary {
+    padding: 12px;
+  }
+  
+  .summary-card .ant-card-body {
+    padding: 16px;
+  }
+}
+
+/* Custom select styling */
+.ant-select-selector {
+  border-radius: 8px !important;
+}
+
+/* Custom date picker styling */
+.ant-picker {
+  border-radius: 8px !important;
+  max-width: 200px;
+}
+
+/* Calendar popup size fix */
+.ant-picker-dropdown {
+  z-index: 1050 !important;
+}
+
+.ant-picker-panel-container {
+  max-width: 280px !important;
+}
+
+.ant-picker-date-panel {
+  width: 280px !important;
+}
+
+.ant-picker-content {
+  width: 100% !important;
+}
+
+/* Calendar responsive */
+@media (max-width: 768px) {
+  .ant-picker-panel-container {
+    max-width: 100vw !important;
+    margin: 8px !important;
+  }
+  
+  .ant-picker-date-panel {
+    width: calc(100vw - 16px) !important;
+    max-width: 320px !important;
+  }
+}
+
+/* Loading state */
+.ant-spin-container {
+  border-radius: 12px;
+}
+
+/* Gradient backgrounds for different statuses */
+.status-excellent {
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+}
+
+.status-good {
+  background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
+}
+
+.status-average {
+  background: linear-gradient(135deg, #fa8c16 0%, #d46b08 100%);
+}
+
+.status-poor {
+  background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%);
+}

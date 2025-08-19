@@ -1,0 +1,28 @@
+{
+  "name": "waste-management-system",
+  "version": "1.0.0",
+  "description": "O'zbekiston chiqindilarni boshqarish tizimi",
+  "main": "server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "server:stable": "cd server && npm run pm2:start",
+    "server:stop": "cd server && npm run pm2:stop",
+    "server:restart": "cd server && npm run pm2:restart",
+    "server:status": "cd server && npm run pm2:status",
+    "server:logs": "cd server && npm run pm2:logs",
+    "server:monitor": "cd server && npm run pm2:monit",
+    "install-server": "cd server && npm install",
+    "install-client": "cd client && npm install",
+    "install-all": "npm run install-server && npm run install-client",
+    "backup": "cd server && npm run db:backup",
+    "restore": "cd server && npm run db:restore"
+  },
+  "keywords": ["waste-management", "uzbekistan", "enterprise"],
+  "author": "Waste Management Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
