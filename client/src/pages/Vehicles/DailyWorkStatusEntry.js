@@ -4,7 +4,6 @@ import {
   Typography, 
   Row, 
   Col, 
-  DatePicker, 
   Table,
   Button,
   message,
@@ -24,13 +23,13 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   EditOutlined,
-  SaveOutlined,
-  BackwardOutlined
+  SaveOutlined
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+
 import moment from 'moment';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
+import useDateStore from '../../stores/dateStore';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -39,7 +38,6 @@ const { TextArea } = Input;
 const DailyWorkStatusEntry = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(moment());
   const [vehicles, setVehicles] = useState([]);
   const [reasons, setReasons] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -47,16 +45,17 @@ const DailyWorkStatusEntry = () => {
   const [pendingChanges, setPendingChanges] = useState(new Set());
   
   const [form] = Form.useForm();
-  const navigate = useNavigate();
+
   const { user } = useAuthStore();
+  const { selectedDate, getApiDate } = useDateStore();
 
   // Texnikalar ro'yxatini olish
-  const fetchVehicles = async (date = selectedDate) => {
+  const fetchVehicles = async () => {
     setLoading(true);
     try {
       const response = await api.get('/daily-work-status/vehicles-for-entry', {
         params: {
-          date: date.format('YYYY-MM-DD')
+          date: getApiDate()
         }
       });
       setVehicles(response.data.data || []);
@@ -81,7 +80,17 @@ const DailyWorkStatusEntry = () => {
   useEffect(() => {
     fetchVehicles();
     fetchReasons();
-  }, [selectedDate]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Global sana o'zgarganda ma'lumotlarni yuklash
+  useEffect(() => {
+    const handleDateChange = () => {
+      fetchVehicles();
+    };
+    
+    window.addEventListener('dateChanged', handleDateChange);
+    return () => window.removeEventListener('dateChanged', handleDateChange);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // "Ishga chiqdi" tugmasini bosish
   const handleWorkingStatus = async (vehicle) => {
@@ -89,7 +98,7 @@ const DailyWorkStatusEntry = () => {
     try {
       await api.post('/daily-work-status', {
         vehicle_id: vehicle.id,
-        date: selectedDate.format('YYYY-MM-DD'),
+        date: getApiDate(),
         work_status: 'working'
       });
 
@@ -118,7 +127,7 @@ const DailyWorkStatusEntry = () => {
     try {
       await api.post('/daily-work-status', {
         vehicle_id: selectedVehicle.id,
-        date: selectedDate.format('YYYY-MM-DD'),
+        date: getApiDate(),
         work_status: 'not_working',
         reason_id: values.reason_id,
         reason_details: values.reason_details,
@@ -164,7 +173,7 @@ const DailyWorkStatusEntry = () => {
     try {
       await api.post('/daily-work-status', {
         vehicle_id: selectedVehicle.id,
-        date: selectedDate.format('YYYY-MM-DD'),
+        date: getApiDate(),
         work_status: values.work_status,
         reason_id: values.work_status === 'not_working' ? values.reason_id : null,
         reason_details: values.work_status === 'not_working' ? values.reason_details : null,
@@ -346,18 +355,6 @@ const DailyWorkStatusEntry = () => {
           </Col>
           <Col>
             <Space>
-              <DatePicker
-                value={selectedDate}
-                onChange={setSelectedDate}
-                defaultValue={moment()}
-                format="DD.MM.YYYY"
-                placeholder="Sanani tanlang"
-                style={{ width: 180 }}
-                size="middle"
-                allowClear={false}
-                disabledDate={(current) => current && current > moment().endOf('day')}
-                getPopupContainer={trigger => trigger.parentElement}
-              />
               {pendingChanges.size > 0 && ['super_admin', 'company_admin'].includes(user?.role?.name) && (
                 <Button
                   type="primary"
@@ -384,7 +381,7 @@ const DailyWorkStatusEntry = () => {
       )}
 
       {/* Texnikalar jadvali */}
-      <Card title={`${selectedDate.format('DD.MM.YYYY')} sanasi uchun texnikalar`}>
+      <Card title={`${selectedDate && moment.isMoment(selectedDate) ? selectedDate.format('DD.MM.YYYY') : moment().format('DD.MM.YYYY')} sanasi uchun texnikalar`}>
         <Spin spinning={loading}>
           <Table
             columns={columns}

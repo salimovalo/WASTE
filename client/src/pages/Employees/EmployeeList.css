@@ -1,0 +1,166 @@
+.employee-list {
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: calc(100vh - 64px);
+}
+
+.employee-list .header-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  margin-bottom: 24px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.employee-list .ant-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.employee-list .ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.employee-list .ant-table-thead > tr > th {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  border: none;
+  text-align: center;
+}
+
+.employee-list .ant-table-tbody > tr:hover > td {
+  background: rgba(24, 144, 255, 0.05);
+}
+
+.employee-list .ant-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.employee-list .ant-btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.employee-list .ant-btn:not(.ant-btn-primary) {
+  transition: all 0.3s ease;
+}
+
+.employee-list .ant-btn:not(.ant-btn-primary):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.employee-list .ant-tag {
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+}
+
+.employee-list .ant-avatar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.employee-list .ant-statistic-title {
+  color: #595959;
+  font-weight: 500;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.employee-list .ant-statistic-content {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Input and Select styling */
+.employee-list .ant-input,
+.employee-list .ant-select-selector {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.employee-list .ant-input:focus,
+.employee-list .ant-input-focused,
+.employee-list .ant-select-focused .ant-select-selector {
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Modal styling */
+.employee-list .ant-modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.employee-list .ant-modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.employee-list .ant-modal-title {
+  color: white;
+  font-weight: 600;
+}
+
+/* Search styling */
+.employee-list .ant-input-search .ant-input-group .ant-input-affix-wrapper {
+  border-radius: 8px;
+}
+
+.employee-list .ant-input-search .ant-btn {
+  border-radius: 0 8px 8px 0;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  .employee-list {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .employee-list {
+    padding: 12px;
+  }
+  
+  .employee-list .ant-table {
+    font-size: 12px;
+  }
+  
+  .employee-list .ant-statistic-content {
+    font-size: 16px;
+  }
+}
+
+/* Loading states */
+.employee-list .ant-spin-container {
+  min-height: 200px;
+}
+
+.employee-list .ant-table-placeholder .ant-table-cell {
+  border-bottom: none;
+}
+
+/* Action buttons */
+.employee-list .ant-btn-sm {
+  height: 24px;
+  padding: 0 7px;
+  font-size: 12px;
+}
+
+.employee-list .ant-btn-sm .anticon {
+  font-size: 12px;
+}

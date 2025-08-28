@@ -191,8 +191,13 @@ const WorkStatusReasons = () => {
       title: 'Yaratuvchi',
       key: 'creator',
       width: 150,
-      render: (record) => 
-        record.creator?.full_name || record.creator?.username || '-'
+      render: (record) => {
+        if (record.creator) {
+          const fullName = `${record.creator.last_name || ''} ${record.creator.first_name || ''}`.trim();
+          return fullName || record.creator.username || '-';
+        }
+        return '-';
+      }
     },
     {
       title: 'Yaratilgan',

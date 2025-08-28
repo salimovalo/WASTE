@@ -29,7 +29,7 @@ const Role = sequelize.define('Role', {
     allowNull: true
   },
   permissions: {
-    type: DataTypes.JSONB,
+    type: DataTypes.JSON,
     defaultValue: {},
     validate: {
       isValidPermissions(value) {

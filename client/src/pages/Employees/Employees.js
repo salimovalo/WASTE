@@ -1,31 +1,24 @@
 import React from 'react';
-import { Card, Typography, Alert } from 'antd';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
-const { Title } = Typography;
+// Employees pages
+import EmployeeDashboard from './EmployeeDashboard';
+import EmployeeList from './EmployeeList';
+import EmployeeTabel from './EmployeeTabel';
+import EmployeeShtat from './EmployeeShtat';
 
 const Employees = () => {
   return (
-    <div className="employees-page fade-in">
-      <Title level={2}>Xodimlar</Title>
-      
-      <Alert
-        message="Rivojlanish jarayonida"
-        description="Xodimlar moduli - dashboard, xodimlar ro'yxati, KPI funksiyalari ishlab chiqilmoqda."
-        type="info"
-        showIcon
-        style={{ marginBottom: 24 }}
-      />
-      
-      <Card>
-        <p>Bu modulda quyidagi funksiyalar bo'ladi:</p>
-        <ul>
-          <li>Xodimlar ro'yxati</li>
-          <li>KPI ko'rsatkichlari</li>
-          <li>Ish faoliyati tahlili</li>
-          <li>Xodimlar statistikalari</li>
-        </ul>
-      </Card>
-    </div>
+    <Routes>
+      <Route path="/" element={<Navigate to="/employees/dashboard" replace />} />
+      <Route path="/dashboard" element={<EmployeeDashboard />} />
+      <Route path="/list" element={<EmployeeList />} />
+      <Route path="/tabel" element={<EmployeeTabel />} />
+      <Route path="/tabel/:employeeId" element={<EmployeeTabel />} />
+      <Route path="/shtat" element={<EmployeeShtat />} />
+      <Route path="/schedule" element={<EmployeeDashboard />} /> {/* Placeholder */}
+      {/* Qo'shimcha sahifalar */}
+    </Routes>
   );
 };
 

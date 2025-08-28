@@ -4,7 +4,6 @@ import {
   Typography, 
   Row, 
   Col, 
-  DatePicker, 
   Table,
   Button,
   message,
@@ -13,7 +12,9 @@ import {
   Progress,
   Tag,
   Spin,
-  Select
+  Select,
+  Tabs,
+  Divider
 } from 'antd';
 import { 
   BarChartOutlined,
@@ -21,23 +22,22 @@ import {
   CarOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  DownloadOutlined,
-  FileExcelOutlined
+  FileExcelOutlined,
+  BookOutlined,
+  PieChartOutlined
 } from '@ant-design/icons';
 import moment from 'moment';
 import api from '../../services/api';
+import useDateStore from '../../stores/dateStore';
 import { useAuthStore } from '../../stores/authStore';
+import ConfirmedJournal from '../../components/ConfirmedJournal';
+import PivotTable from '../../components/PivotTable';
 
 const { Title } = Typography;
-const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const DailyWorkStatusStatistics = () => {
   const [loading, setLoading] = useState(false);
-  const [dateRange, setDateRange] = useState([
-    moment().startOf('month'),
-    moment()
-  ]);
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [statistics, setStatistics] = useState({
     summary: {},
@@ -46,13 +46,23 @@ const DailyWorkStatusStatistics = () => {
   });
   const [districts, setDistricts] = useState([]);
   const [aggregatedData, setAggregatedData] = useState([]);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [journalData, setJournalData] = useState({
+    journal: [],
+    pivot_data: {}
+  });
 
   const { user } = useAuthStore();
+  const { selectedDate } = useDateStore();
 
-  // Statistikani olish
-  const fetchStatistics = async (startDate = dateRange[0], endDate = dateRange[1]) => {
+  // Statistikani olish - oylik statistika
+  const fetchStatistics = async () => {
     setLoading(true);
     try {
+      const currentDate = selectedDate && moment.isMoment(selectedDate) ? selectedDate : moment();
+      const startDate = moment(currentDate).startOf('month');
+      const endDate = moment(currentDate);
+      
       const params = {
         start_date: startDate.format('YYYY-MM-DD'),
         end_date: endDate.format('YYYY-MM-DD')
@@ -92,7 +102,7 @@ const DailyWorkStatusStatistics = () => {
     
     dailyData.forEach(record => {
       const vehicleId = record.vehicle.id;
-      const plateNumber = record.vehicle.plate_number;
+
       
       if (!vehicleMap[vehicleId]) {
         vehicleMap[vehicleId] = {
@@ -136,7 +146,17 @@ const DailyWorkStatusStatistics = () => {
   useEffect(() => {
     fetchStatistics();
     fetchDistricts();
-  }, [dateRange, selectedDistrict]);
+  }, [selectedDistrict]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Global sana o'zgarganda ma'lumotlarni yuklash
+  useEffect(() => {
+    const handleDateChange = () => {
+      fetchStatistics();
+    };
+    
+    window.addEventListener('dateChanged', handleDateChange);
+    return () => window.removeEventListener('dateChanged', handleDateChange);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Excel export qilish
   const handleExportExcel = () => {
@@ -269,7 +289,7 @@ const DailyWorkStatusStatistics = () => {
           <Col>
             <div>
               <Title level={3} style={{ margin: 0 }}>
-                <BarChartOutlined /> Statistika
+                <BarChartOutlined /> Statistika va hisobotlar
               </Title>
               {user && (
                 <div style={{ fontSize: '14px', color: '#666', marginTop: '4px' }}>
@@ -299,179 +319,212 @@ const DailyWorkStatusStatistics = () => {
         </Row>
       </div>
 
-      {/* Filtrlar */}
-      <Card style={{ marginBottom: 24 }}>
-        <Row gutter={16} align="middle">
-          <Col>
-            <Space>
-              <CalendarOutlined />
-              <span>Muddat:</span>
-            </Space>
-          </Col>
-          <Col>
-            <RangePicker
-              value={dateRange}
-              onChange={setDateRange}
-              defaultValue={[moment().startOf('month'), moment()]}
-              format="DD.MM.YYYY"
-              style={{ width: 250 }}
-              size="middle"
-              allowClear={false}
-              disabledDate={(current) => current && current > moment().endOf('day')}
-              getPopupContainer={trigger => trigger.parentElement}
-            />
-          </Col>
-          {['super_admin', 'company_admin'].includes(user?.role?.name) && (
-            <>
-              <Col>
-                <span>Tuman:</span>
-              </Col>
-              <Col>
-                <Select
-                  style={{ width: 200 }}
-                  placeholder="Barcha tumanlar"
-                  allowClear
-                  value={selectedDistrict}
-                  onChange={setSelectedDistrict}
-                >
-                  {districts.map(district => (
-                    <Option key={district.id} value={district.id}>
-                      {district.name}
-                    </Option>
-                  ))}
-                </Select>
-              </Col>
-            </>
-          )}
-        </Row>
+      {/* Tablar */}
+      <Card>
+        <Tabs 
+          activeKey={activeTab} 
+          onChange={setActiveTab}
+          size="large"
+          items={[
+            {
+              key: 'overview',
+              label: (
+                <span>
+                  <BarChartOutlined />
+                  Umumiy statistika
+                </span>
+              ),
+              children: (
+                <div>
+                  {/* Filtrlar */}
+                  <Card style={{ marginBottom: 24 }}>
+                    <Row gutter={16} align="middle">
+                      <Col>
+                        <Space>
+                          <CalendarOutlined />
+                          <span>Oylik statistika:</span>
+                          <Tag color="blue">
+                            {selectedDate && moment.isMoment(selectedDate) ? selectedDate.format('MMMM YYYY') : moment().format('MMMM YYYY')}
+                          </Tag>
+                        </Space>
+                      </Col>
+                      {['super_admin', 'company_admin'].includes(user?.role?.name) && (
+                        <>
+                          <Col>
+                            <span>Tuman:</span>
+                          </Col>
+                          <Col>
+                            <Select
+                              style={{ width: 200 }}
+                              placeholder="Barcha tumanlar"
+                              allowClear
+                              value={selectedDistrict}
+                              onChange={setSelectedDistrict}
+                            >
+                              {districts.map(district => (
+                                <Option key={district.id} value={district.id}>
+                                  {district.name}
+                                </Option>
+                              ))}
+                            </Select>
+                          </Col>
+                        </>
+                      )}
+                    </Row>
+                  </Card>
+
+                  {/* Umumiy statistika */}
+                  <Row gutter={16} style={{ marginBottom: 24 }}>
+                    <Col xs={24} sm={12} md={6}>
+                      <Card>
+                        <Statistic
+                          title="Jami yozuvlar"
+                          value={statistics.summary?.total_records || 0}
+                          prefix={<CarOutlined />}
+                          valueStyle={{ color: '#1890ff' }}
+                        />
+                      </Card>
+                    </Col>
+                    <Col xs={24} sm={12} md={6}>
+                      <Card>
+                        <Statistic
+                          title="Ishlaganlar"
+                          value={statistics.summary?.working_count || 0}
+                          prefix={<CheckCircleOutlined />}
+                          valueStyle={{ color: '#52c41a' }}
+                        />
+                      </Card>
+                    </Col>
+                    <Col xs={24} sm={12} md={6}>
+                      <Card>
+                        <Statistic
+                          title="Ishlamaganlar"
+                          value={statistics.summary?.not_working_count || 0}
+                          prefix={<CloseCircleOutlined />}
+                          valueStyle={{ color: '#ff4d4f' }}
+                        />
+                      </Card>
+                    </Col>
+                    <Col xs={24} sm={12} md={6}>
+                      <Card>
+                        <Statistic
+                          title="Tasdiqlangan"
+                          value={statistics.summary?.confirmed_count || 0}
+                          prefix={<CheckCircleOutlined />}
+                          valueStyle={{ color: '#52c41a' }}
+                        />
+                      </Card>
+                    </Col>
+                  </Row>
+
+                  {/* Texnikalar bo'yicha statistika */}
+                  <Row gutter={16}>
+                    <Col xs={24} lg={16}>
+                      <Card title="Texnikalar bo'yicha statistika" style={{ marginBottom: 24 }}>
+                        <Spin spinning={loading}>
+                          <Table
+                            columns={vehicleColumns}
+                            dataSource={aggregatedData}
+                            rowKey={(record) => record.vehicle.id}
+                            pagination={{
+                              pageSize: 10,
+                              showSizeChanger: true,
+                              showTotal: (total, range) => 
+                                `${range[0]}-${range[1]} / ${total} ta`
+                            }}
+                            scroll={{ x: 'max-content' }}
+                          />
+                        </Spin>
+                      </Card>
+                    </Col>
+
+                    <Col xs={24} lg={8}>
+                      <Card title="Sabablar bo'yicha statistika" style={{ marginBottom: 24 }}>
+                        <Table
+                          columns={reasonsColumns}
+                          dataSource={reasonsData}
+                          rowKey="reason"
+                          pagination={false}
+                          size="small"
+                          scroll={{ y: 400 }}
+                        />
+                      </Card>
+                    </Col>
+                  </Row>
+
+                  {/* Kunlik batafsil ma'lumotlar */}
+                  {statistics.daily_data && statistics.daily_data.length > 0 && (
+                    <Card title="Batafsil kunlik ma'lumotlar">
+                      <Table
+                        columns={[
+                          {
+                            title: 'Sana',
+                            dataIndex: 'date',
+                            key: 'date',
+                            render: (date) => moment(date).format('DD.MM.YYYY')
+                          },
+                          {
+                            title: 'Texnika',
+                            key: 'vehicle',
+                            render: (record) => `${record.vehicle.plate_number} (${record.vehicle.brand})`
+                          },
+                          {
+                            title: 'Holat',
+                            dataIndex: 'work_status',
+                            key: 'work_status',
+                            render: (status) => (
+                              <Tag color={status === 'working' ? 'green' : 'red'}>
+                                {status === 'working' ? 'Ishga chiqdi' : 'Ishga chiqmadi'}
+                              </Tag>
+                            )
+                          },
+                          {
+                            title: 'Sabab',
+                            key: 'reason',
+                            render: (record) => record.reason?.name || '-'
+                          },
+                          {
+                            title: 'Operator',
+                            key: 'operator',
+                            render: (record) => record.operator?.full_name || '-'
+                          }
+                        ]}
+                        dataSource={statistics.daily_data}
+                        rowKey="id"
+                        pagination={{
+                          pageSize: 20,
+                          showSizeChanger: true
+                        }}
+                        scroll={{ x: 'max-content' }}
+                      />
+                    </Card>
+                  )}
+                </div>
+              )
+            },
+            {
+              key: 'journal',
+              label: (
+                <span>
+                  <BookOutlined />
+                  Tasdiqlangan yozuvlar jurnali
+                </span>
+              ),
+              children: <ConfirmedJournal />
+            },
+            {
+              key: 'pivot',
+              label: (
+                <span>
+                  <PieChartOutlined />
+                  Yeg'indi jadval
+                </span>
+              ),
+              children: <PivotTable pivotData={journalData.pivot_data} />
+            }
+          ]}
+        />
       </Card>
-
-      {/* Umumiy statistika */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="Jami yozuvlar"
-              value={statistics.summary?.total_records || 0}
-              prefix={<CarOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="Ishlaganlar"
-              value={statistics.summary?.working_count || 0}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="Ishlamaganlar"
-              value={statistics.summary?.not_working_count || 0}
-              prefix={<CloseCircleOutlined />}
-              valueStyle={{ color: '#ff4d4f' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="Tasdiqlangan"
-              value={statistics.summary?.confirmed_count || 0}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Texnikalar bo'yicha statistika */}
-      <Row gutter={16}>
-        <Col xs={24} lg={16}>
-          <Card title="Texnikalar bo'yicha statistika" style={{ marginBottom: 24 }}>
-            <Spin spinning={loading}>
-              <Table
-                columns={vehicleColumns}
-                dataSource={aggregatedData}
-                rowKey={(record) => record.vehicle.id}
-                pagination={{
-                  pageSize: 10,
-                  showSizeChanger: true,
-                  showTotal: (total, range) => 
-                    `${range[0]}-${range[1]} / ${total} ta`
-                }}
-                scroll={{ x: 'max-content' }}
-              />
-            </Spin>
-          </Card>
-        </Col>
-
-        <Col xs={24} lg={8}>
-          <Card title="Sabablar bo'yicha statistika" style={{ marginBottom: 24 }}>
-            <Table
-              columns={reasonsColumns}
-              dataSource={reasonsData}
-              rowKey="reason"
-              pagination={false}
-              size="small"
-              scroll={{ y: 400 }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Kunlik batafsil ma'lumotlar */}
-      {statistics.daily_data && statistics.daily_data.length > 0 && (
-        <Card title="Batafsil kunlik ma'lumotlar">
-          <Table
-            columns={[
-              {
-                title: 'Sana',
-                dataIndex: 'date',
-                key: 'date',
-                render: (date) => moment(date).format('DD.MM.YYYY')
-              },
-              {
-                title: 'Texnika',
-                key: 'vehicle',
-                render: (record) => `${record.vehicle.plate_number} (${record.vehicle.brand})`
-              },
-              {
-                title: 'Holat',
-                dataIndex: 'work_status',
-                key: 'work_status',
-                render: (status) => (
-                  <Tag color={status === 'working' ? 'green' : 'red'}>
-                    {status === 'working' ? 'Ishga chiqdi' : 'Ishga chiqmadi'}
-                  </Tag>
-                )
-              },
-              {
-                title: 'Sabab',
-                key: 'reason',
-                render: (record) => record.reason?.name || '-'
-              },
-              {
-                title: 'Operator',
-                key: 'operator',
-                render: (record) => record.operator?.full_name || '-'
-              }
-            ]}
-            dataSource={statistics.daily_data}
-            rowKey="id"
-            pagination={{
-              pageSize: 20,
-              showSizeChanger: true
-            }}
-            scroll={{ x: 'max-content' }}
-          />
-        </Card>
-      )}
     </div>
   );
 };

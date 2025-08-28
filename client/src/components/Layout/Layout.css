@@ -79,6 +79,7 @@
   background: rgba(255, 255, 255, 0.05);
   margin: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
 }
 
 .logo-text {
@@ -87,14 +88,24 @@
   font-weight: bold;
   text-align: center;
   line-height: 1.2;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  white-space: nowrap;
+  opacity: 1;
+  transform: translateX(0);
 }
 
-/* Content stil */
-.site-layout-content {
-  background: #f0f2f5;
-  min-height: calc(100vh - 64px);
+/* Logo collapsed holatda */
+.ant-layout-sider-collapsed .logo-text {
+  font-size: 14px;
+  transform: translateX(0);
 }
+
+/* Logo hover holatda */
+.custom-sider:hover .logo-text {
+  transform: translateX(0) scale(1.05);
+}
+
+/* Content stil - sidebar bilan mos */
 
 .breadcrumb-container {
   padding: 16px 24px 0 24px;
@@ -152,17 +163,60 @@
 /* Menu stillar */
 .ant-menu-dark.ant-menu-inline .ant-menu-item-selected {
   background-color: #1890ff !important;
+  transform: translateX(4px);
 }
 
 .ant-menu-dark .ant-menu-item:hover {
+  background-color: rgba(24, 144, 255, 0.2) !important;
+  transform: translateX(4px);
+}
+
+.ant-menu-dark .ant-menu-item {
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  border-radius: 6px;
+  margin: 2px 8px;
+  width: auto;
+}
+
+/* Submenu stillar */
+.ant-menu-dark .ant-menu-submenu-title:hover {
   background-color: rgba(24, 144, 255, 0.1) !important;
+  transform: translateX(2px);
+}
+
+.ant-menu-dark .ant-menu-submenu-title {
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  border-radius: 6px;
+  margin: 2px 8px;
 }
 
 /* Sider stillar */
 .ant-layout-sider {
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-  position: relative;
-  z-index: 10;
+  position: fixed; /* Fixed position */
+  z-index: 1000; /* Sahifa ustida */
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1) !important;
+}
+
+/* Custom Sider - sahifa ustida */
+.custom-sider {
+  position: fixed !important; /* Sahifa ustida */
+  height: 100vh;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  z-index: 1000; /* Eng yuqorida */
+}
+
+.custom-sider:hover {
+  overflow: visible;
+  z-index: 1001; /* Hover da yanada yuqori */
+}
+
+.custom-sider .ant-layout-sider-children {
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  height: 100vh;
+  overflow-y: auto;
 }
 
 /* Breadcrumb stillar */
@@ -211,9 +265,20 @@
   background: rgba(255, 255, 255, 0.5);
 }
 
-/* Animation */
+/* Animation - Sahifani o'ngga surish */
+.site-layout {
+  margin-left: 80px; /* Collapsed sidebar uchun joy */
+  transition: none; /* Transition yo'q */
+}
+
 .site-layout-content {
-  transition: all 0.2s;
+  transition: none; /* Content o'zgarmasin */
+  transform: none; /* Transform yo'q */
+  background: #f0f2f5;
+  min-height: calc(100vh - 64px);
+  position: relative;
+  z-index: 1; /* Sidebar ostida */
+  width: 100%; /* To'liq kenglik layout ichida */
 }
 
 .ant-layout-sider-trigger {
@@ -223,4 +288,78 @@
 
 .ant-layout-sider-trigger:hover {
   background: #1890ff !important;
+}
+
+/* Menu info stil */
+.menu-info {
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.menu-info span {
+  transition: all 0.3s;
+}
+
+/* Hover animatsiya effektlari */
+.custom-sider {
+  transition: width 0.3s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.3s ease;
+}
+
+.custom-sider:hover {
+  transform: none; /* Transform olib tashlandi */
+  box-shadow: 6px 0 30px rgba(0, 0, 0, 0.2); /* Faqat shadow */
+}
+
+/* Scrollbar hover holatda yashirish */
+.custom-sider:not(:hover) .ant-layout-sider-children::-webkit-scrollbar {
+  width: 0px;
+}
+
+/* Performance optimizatsiya */
+.custom-sider,
+.ant-menu-item {
+  will-change: width, box-shadow;
+}
+
+/* Header - sidebar bilan mos */
+.site-layout .site-layout-header {
+  background: #fff;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 4px rgba(0,21,41,.08);
+  position: relative;
+  z-index: 10;
+  width: 100%; /* To'liq kenglik (layout ichida) */
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .site-layout {
+    margin-left: 0 !important; /* Mobile da to'liq kenglik */
+  }
+  
+  .custom-sider {
+    position: fixed !important;
+    z-index: 1500; /* Mobile da yuqori z-index */
+    transform: translateX(-100%); /* Yashiringan */
+  }
+  
+  .custom-sider:hover {
+    transform: translateX(0); /* Hover da paydo bo'ladi */
+  }
+  
+  /* Mobile da backdrop */
+  .custom-sider:hover::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: -1;
+  }
 }

@@ -40,8 +40,11 @@ const Neighborhood = sequelize.define('Neighborhood', {
     }
   },
   type: {
-    type: DataTypes.ENUM('apartment_complex', 'private_houses', 'mixed'),
-    defaultValue: 'mixed'
+    type: DataTypes.STRING(20),
+    defaultValue: 'mixed',
+    validate: {
+      isIn: [['apartment_complex', 'private_houses', 'mixed']]
+    }
   },
   households_count: {
     type: DataTypes.INTEGER,

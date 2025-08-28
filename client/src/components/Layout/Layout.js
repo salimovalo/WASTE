@@ -22,13 +22,14 @@ import {
   DatabaseOutlined,
   HistoryOutlined,
   ShopOutlined,
-  ExclamationCircleOutlined,
-  PieChartOutlined
+  EditOutlined,
+  ApartmentOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { hasPermission, PERMISSIONS } from '../../utils/permissions';
 import CompanySelector from './CompanySelector';
+import GlobalDatePicker from './GlobalDatePicker';
 import './Layout.css';
 
 const { Header, Sider, Content } = AntLayout;
@@ -117,11 +118,7 @@ const getMenuItems = (user) => {
           icon: <ThunderboltOutlined />,
           label: 'Yoqilg\'i',
         },
-        {
-          key: '/vehicles/report-206',
-          icon: <BarChartOutlined />,
-          label: '206 xisoboti',
-        },
+
         {
           key: '/vehicles/data-entry',
           icon: <DatabaseOutlined />,
@@ -136,6 +133,20 @@ const getMenuItems = (user) => {
     });
   }
 
+  // Ma'lumotlar kiritish moduli
+  items.push({
+    key: '/data-entry',
+    icon: <EditOutlined />,
+    label: 'Ma\'lumotlar kiritish',
+    children: [
+      {
+        key: '/data-entry/206-report',
+        icon: <FileTextOutlined />,
+        label: '206 Xisoboti',
+      }
+    ]
+  });
+
   if (user?.role?.permissions?.view_service_quality) {
     items.push({
       key: '/service-quality',
@@ -147,8 +158,30 @@ const getMenuItems = (user) => {
   if (user?.role?.permissions?.view_employees) {
     items.push({
       key: '/employees',
-      icon: <UsergroupAddOutlined />,
+      icon: <TeamOutlined />,
       label: 'Xodimlar',
+      children: [
+        {
+          key: '/employees/dashboard',
+          icon: <DashboardOutlined />,
+          label: 'Dashboard',
+        },
+        {
+          key: '/employees/list',
+          icon: <UserOutlined />,
+          label: 'Xodimlar ro\'yxati',
+        },
+        {
+          key: '/employees/tabel',
+          icon: <CalendarOutlined />,
+          label: 'Tabel',
+        },
+        {
+          key: '/employees/shtat',
+          icon: <ApartmentOutlined />,
+          label: 'Shtat jadvali',
+        }
+      ]
     });
   }
 
@@ -193,24 +226,30 @@ const breadcrumbNameMap = {
   '/vehicles/list': 'Texnikalar ro\'yxati',
   '/vehicles/daily-work-status': 'Kunlik ma\'lumot',
   '/vehicles/fuel': 'Yoqilg\'i',
-  '/vehicles/report-206': '206 xisoboti',
+  '/data-entry': 'Ma\'lumotlar kiritish',
+  '/data-entry/206-report': '206 Xisoboti',
   '/vehicles/data-entry': 'Ma\'lumotlar kiritish',
   '/vehicles/historical': 'Tarixiy ma\'lumotlar',
   '/service-quality': 'Xizmat sifati',
   '/employees': 'Xodimlar',
+  '/employees/dashboard': 'Xodimlar dashboard',
+  '/employees/list': 'Xodimlar ro\'yxati',
+  '/employees/tabel': 'Tabel',
+  '/employees/shtat': 'Shtat jadvali',
   '/fuel-stations': 'Zapravkalar',
   '/reports': 'Xisobotlar',
   '/settings': 'Sozlamalar',
 };
 
 const Layout = ({ children }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true); // Har doim kichik formatda
+  const [hovered, setHovered] = useState(false); // Hover holati
   const [loading, setLoading] = useState(true);
   const [openKeys, setOpenKeys] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
   
-  const { user, logout, hasPermission, checkAuth } = useAuthStore();
+  const { user, logout, checkAuth } = useAuthStore();
 
   // Sahifa yuklanishida autentifikatsiyani tekshirish
   useEffect(() => {
@@ -229,8 +268,10 @@ const Layout = ({ children }) => {
   useEffect(() => {
     const path = location.pathname;
     const newOpenKeys = [];
-    if (path.startsWith('/admin/')) newOpenKeys.push('admin');
-    if (path.startsWith('/vehicles/')) newOpenKeys.push('vehicles');
+    if (path.startsWith('/admin/')) newOpenKeys.push('/admin');
+    if (path.startsWith('/vehicles/')) newOpenKeys.push('/vehicles');
+    if (path.startsWith('/employees/')) newOpenKeys.push('/employees');
+    if (path.startsWith('/data-entry/')) newOpenKeys.push('/data-entry');
     setOpenKeys(newOpenKeys);
   }, [location.pathname]);
 
@@ -331,13 +372,17 @@ const Layout = ({ children }) => {
       <Sider 
         trigger={null} 
         collapsible 
-        collapsed={collapsed}
+        collapsed={!hovered} // Hover qilganda ochiladi
         theme="dark"
         width={250}
+        collapsedWidth={80}
+        className="custom-sider"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
       >
         <div className="logo">
           <div className="logo-text">
-            {collapsed ? 'CBT' : 'Chiqindi Boshqaruv Tizimi'}
+            {hovered ? 'Chiqindi Boshqaruv Tizimi' : 'CBT'}
           </div>
         </div>
         
@@ -345,25 +390,26 @@ const Layout = ({ children }) => {
           theme="dark"
           mode="inline"
           selectedKeys={getSelectedKeys()}
-          openKeys={openKeys}
+          openKeys={hovered ? openKeys : []} // Faqat hover qilganda submenu ochilsin
           onOpenChange={handleOpenChange}
           items={menuItems}
           onClick={handleMenuClick}
+          inlineCollapsed={!hovered} // Hover holatini kuzatish
         />
       </Sider>
       
       <AntLayout className="site-layout">
         <Header className="site-layout-header">
           <div className="header-left">
-            {React.createElement(
-              collapsed ? MenuUnfoldOutlined : MenuFoldOutlined,
-              {
-                className: 'trigger',
-                onClick: () => setCollapsed(!collapsed),
-              }
-            )}
+            {/* Manual toggle o'chirildi - faqat hover ishlaydi */}
+            <div className="menu-info">
+              <span style={{ fontSize: '12px', color: '#666' }}>Menu uchun sichqoncha olib boring</span>
+            </div>
             
-            <CompanySelector />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CompanySelector />
+              <GlobalDatePicker />
+            </div>
           </div>
           
           <div className="header-right">
@@ -374,7 +420,7 @@ const Layout = ({ children }) => {
             
             {/* Foydalanuvchi ma'lumotlari */}
             <Dropdown 
-              overlay={userMenu} 
+              menu={{ items: userMenu.props.items }} 
               trigger={['click']}
               placement="bottomRight"
             >

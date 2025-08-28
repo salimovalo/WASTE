@@ -1,0 +1,289 @@
+.employee-shtat {
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: calc(100vh - 64px);
+}
+
+.employee-shtat .header-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  margin-bottom: 24px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.employee-shtat .ant-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.employee-shtat .ant-card-head {
+  background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.employee-shtat .ant-card-head-title {
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.shtat-table .ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.shtat-table .ant-table-thead > tr > th {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  border: none;
+  text-align: center;
+}
+
+.shtat-table .ant-table-tbody > tr:hover > td {
+  background: rgba(24, 144, 255, 0.05);
+}
+
+.shtat-table .ant-table-tbody > tr > td {
+  vertical-align: top;
+  padding: 12px 8px;
+}
+
+/* Department type styling */
+.shtat-table .department-operational {
+  border-left: 4px solid #1890ff;
+}
+
+.shtat-table .department-aup {
+  border-left: 4px solid #722ed1;
+}
+
+/* Progress and statistics styling */
+.shtat-table .ant-progress-line {
+  margin: 4px 0;
+}
+
+.shtat-table .ant-progress-bg {
+  border-radius: 4px;
+}
+
+/* Tag styling */
+.employee-shtat .ant-tag {
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Avatar styling */
+.employee-shtat .ant-avatar {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Statistics styling */
+.employee-shtat .ant-statistic-title {
+  color: #595959;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.employee-shtat .ant-statistic-content {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+/* Tabs styling */
+.employee-shtat .ant-tabs-tab {
+  font-weight: 500;
+}
+
+.employee-shtat .ant-tabs-tab-active {
+  color: #1890ff;
+}
+
+.employee-shtat .ant-tabs-ink-bar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  height: 3px;
+}
+
+/* Button styling */
+.employee-shtat .ant-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.employee-shtat .ant-btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.employee-shtat .ant-btn:not(.ant-btn-primary) {
+  transition: all 0.3s ease;
+}
+
+.employee-shtat .ant-btn:not(.ant-btn-primary):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Input and Select styling */
+.employee-shtat .ant-input,
+.employee-shtat .ant-select-selector {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.employee-shtat .ant-input:focus,
+.employee-shtat .ant-input-focused,
+.employee-shtat .ant-select-focused .ant-select-selector {
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Modal styling */
+.employee-shtat .ant-modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.employee-shtat .ant-modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.employee-shtat .ant-modal-title {
+  color: white;
+  font-weight: 600;
+}
+
+/* Completion rate colors */
+.completion-excellent {
+  color: #52c41a;
+}
+
+.completion-good {
+  color: #faad14;
+}
+
+.completion-poor {
+  color: #ff4d4f;
+}
+
+/* Employee list styling */
+.employee-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.employee-list-item:last-child {
+  border-bottom: none;
+}
+
+/* Salary formatting */
+.salary-range {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+/* Requirements text */
+.requirements-text {
+  max-width: 250px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Print styles */
+@media print {
+  .employee-shtat {
+    background: white;
+    padding: 0;
+  }
+  
+  .employee-shtat .header-card,
+  .employee-shtat .ant-card {
+    box-shadow: none;
+    border: 1px solid #000;
+    margin-bottom: 10px;
+  }
+  
+  .shtat-table .ant-table {
+    font-size: 10px;
+  }
+  
+  .shtat-table .ant-table-thead > tr > th,
+  .shtat-table .ant-table-tbody > tr > td {
+    padding: 4px;
+    font-size: 9px;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  .employee-shtat {
+    padding: 16px;
+  }
+  
+  .shtat-table .ant-table-thead > tr > th,
+  .shtat-table .ant-table-tbody > tr > td {
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+  
+  .employee-shtat .ant-statistic-content {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .employee-shtat {
+    padding: 12px;
+  }
+  
+  .employee-shtat .ant-statistic-content {
+    font-size: 16px;
+  }
+  
+  .shtat-table .ant-table {
+    font-size: 11px;
+  }
+  
+  .requirements-text {
+    max-width: 150px;
+  }
+}
+
+/* Loading states */
+.employee-shtat .ant-spin-container {
+  min-height: 300px;
+}
+
+/* Tree structure styling (for future organization chart) */
+.organization-tree .ant-tree {
+  background: transparent;
+}
+
+.organization-tree .ant-tree-node-content-wrapper {
+  border-radius: 6px;
+  padding: 4px 8px;
+  transition: all 0.3s ease;
+}
+
+.organization-tree .ant-tree-node-content-wrapper:hover {
+  background: rgba(24, 144, 255, 0.1);
+}
+
+.organization-tree .ant-tree-node-selected .ant-tree-node-content-wrapper {
+  background: rgba(24, 144, 255, 0.2);
+}

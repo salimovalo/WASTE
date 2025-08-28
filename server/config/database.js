@@ -12,7 +12,7 @@ const sequelize = new Sequelize({
     idle: 10000
   },
   
-  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  logging: process.env.NODE_ENV === 'development' ? false : false, // Logni o'chirish
   
   define: {
     timestamps: true,

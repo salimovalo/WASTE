@@ -1,0 +1,216 @@
+.trip-sheet-table {
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: calc(100vh - 64px);
+}
+
+.header-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  margin-bottom: 24px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.trip-sheet-table-main {
+  background: white;
+  border-radius: 12px;
+}
+
+.trip-sheet-table-main .ant-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.trip-sheet-table-main .ant-table-thead > tr > th {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  border: none;
+  text-align: center;
+}
+
+.trip-sheet-table-main .ant-table-tbody > tr:hover > td {
+  background: rgba(24, 144, 255, 0.05);
+}
+
+/* Row status styling */
+.trip-sheet-table-main .ant-table-tbody > tr.status-completed {
+  background: rgba(82, 196, 26, 0.02);
+  border-left: 4px solid #52c41a;
+}
+
+.trip-sheet-table-main .ant-table-tbody > tr.status-pending {
+  background: rgba(250, 140, 22, 0.02);
+  border-left: 4px solid #fa8c16;
+}
+
+.trip-sheet-table-main .ant-table-tbody > tr.status-not_started {
+  background: rgba(217, 217, 217, 0.02);
+  border-left: 4px solid #d9d9d9;
+}
+
+.trip-sheet-table-main .ant-table-tbody > tr.has-alerts {
+  background: rgba(255, 193, 7, 0.05);
+}
+
+/* Column specific styling */
+.vehicle-info {
+  padding: 8px 0;
+}
+
+.clickable-vehicle {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.clickable-vehicle:hover {
+  background: rgba(24, 144, 255, 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+}
+
+.vehicle-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.status-column {
+  text-align: center;
+}
+
+.fuel-column,
+.distance-column,
+.waste-column {
+  text-align: center;
+}
+
+.alerts-column .ant-tag {
+  display: block;
+  margin: 2px 0;
+  text-align: left;
+  font-size: 11px;
+  line-height: 1.2;
+  padding: 2px 6px;
+}
+
+/* Progress bar styling */
+.ant-progress-line {
+  margin: 4px 0;
+}
+
+.ant-progress-bg {
+  border-radius: 2px;
+}
+
+/* Button styling */
+.trip-sheet-table .ant-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.trip-sheet-table .ant-btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Modal styling */
+.ant-modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px 8px 0 0;
+}
+
+.ant-modal-title {
+  color: white;
+  font-weight: 600;
+}
+
+.ant-modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Tag animations */
+.ant-tag {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+}
+
+.ant-tag:hover {
+  transform: scale(1.05);
+}
+
+/* Input styling */
+.ant-input,
+.ant-input-number,
+.ant-select-selector {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.ant-input:focus,
+.ant-input-number:focus,
+.ant-select-focused .ant-select-selector {
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .trip-sheet-table {
+    padding: 16px;
+  }
+  
+  .header-card {
+    margin-bottom: 16px;
+  }
+  
+  .trip-sheet-table-main .ant-table {
+    font-size: 12px;
+  }
+  
+  .vehicle-header {
+    font-size: 14px;
+  }
+}
+
+/* Loading states */
+.ant-table-tbody > tr.ant-table-placeholder:hover > td {
+  background: transparent;
+}
+
+.ant-spin-container {
+  transition: opacity 0.3s ease;
+}
+
+/* Search and filter styling */
+.ant-input-search .ant-input-group .ant-input-affix-wrapper {
+  border-radius: 8px;
+}
+
+.ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  border-radius: 8px;
+}
+
+/* Badge styling */
+.ant-badge-count {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* Alert styling */
+.has-alerts .alerts-column .ant-tag {
+  animation: alertPulse 2s infinite;
+}
+
+@keyframes alertPulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}

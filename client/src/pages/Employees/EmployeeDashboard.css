@@ -1,0 +1,161 @@
+.employee-dashboard {
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: calc(100vh - 64px);
+}
+
+.stat-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.drivers {
+  border-left: 4px solid #52c41a;
+}
+
+.stat-card.loaders {
+  border-left: 4px solid #fa8c16;
+}
+
+.stat-card.attendance {
+  border-left: 4px solid #722ed1;
+}
+
+.employee-dashboard .ant-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.employee-dashboard .ant-card-head {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.employee-dashboard .ant-card-head-title {
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.employee-dashboard .ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.employee-dashboard .ant-table-thead > tr > th {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  border: none;
+}
+
+.employee-dashboard .ant-table-tbody > tr:hover > td {
+  background: rgba(24, 144, 255, 0.05);
+}
+
+.employee-dashboard .ant-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.employee-dashboard .ant-btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.employee-dashboard .ant-btn:not(.ant-btn-primary) {
+  transition: all 0.3s ease;
+}
+
+.employee-dashboard .ant-btn:not(.ant-btn-primary):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.employee-dashboard .ant-statistic-content {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.employee-dashboard .ant-statistic-title {
+  color: #595959;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+/* Tag improvements */
+.employee-dashboard .ant-tag {
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.employee-dashboard .ant-tag:hover {
+  transform: scale(1.05);
+}
+
+/* Progress bar styling */
+.employee-dashboard .ant-progress-line {
+  margin: 8px 0 0 0;
+}
+
+.employee-dashboard .ant-progress-bg {
+  border-radius: 4px;
+}
+
+/* Avatar styling */
+.employee-dashboard .ant-avatar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Loading state */
+.employee-dashboard .ant-spin-container {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  .employee-dashboard {
+    padding: 16px;
+  }
+  
+  .stat-card {
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .employee-dashboard {
+    padding: 12px;
+  }
+  
+  .employee-dashboard .ant-col {
+    margin-bottom: 16px;
+  }
+  
+  .employee-dashboard .ant-card-head-title {
+    font-size: 14px;
+  }
+  
+  .employee-dashboard .ant-statistic-content {
+    font-size: 18px;
+  }
+}

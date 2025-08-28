@@ -16,13 +16,14 @@ const technicsRoutes = require('./routes/vehicles');
 const fuelStationsRoutes = require('./routes/fuel-stations');
 const dailyWorkStatusRoutes = require('./routes/daily-work-status');
 const workStatusReasonsRoutes = require('./routes/work-status-reasons');
+const employeesRoutes = require('./routes/employees');
 
 // Database backup middleware
 const { criticalBackup, scheduleDailyBackup } = require('./middleware/database-backup');
 const dbManager = require('./utils/database-manager');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8000; // Port konfliktini oldini olish
 
 // Xavfsizlik middleware
 app.use(helmet());
@@ -103,6 +104,13 @@ app.use('/api/technics', technicsRoutes);
 app.use('/api/fuel-stations', fuelStationsRoutes);
 app.use('/api/daily-work-status', dailyWorkStatusRoutes);
 app.use('/api/work-status-reasons', workStatusReasonsRoutes);
+app.use('/api/employees', employeesRoutes);
+
+// 206 Xisobot routes
+const tripSheetsRoutes = require('./routes/trip-sheets');
+const disposalSitesRoutes = require('./routes/disposal-sites');
+app.use('/api/trip-sheets', tripSheetsRoutes);
+app.use('/api/disposal-sites', disposalSitesRoutes);
 
 // Database management endpoints
 app.get('/api/admin/db/status', async (req, res) => {

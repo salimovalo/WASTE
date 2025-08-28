@@ -5,6 +5,7 @@ const Company = require('./Company');
 const District = require('./District');
 const Role = require('./Role');
 const User = require('./User');
+const Employee = require('./Employee');
 const Neighborhood = require('./Neighborhood');
 const LegalEntity = require('./LegalEntity');
 const Contract = require('./Contract');
@@ -15,6 +16,11 @@ const FuelStation = require('./FuelStation');
 const DistrictFuelStation = require('./DistrictFuelStation');
 const WorkStatusReason = require('./WorkStatusReason');
 const VehicleWorkStatus = require('./VehicleWorkStatus');
+
+// 206 Xisobot modellari
+const TripSheet = require('./TripSheet');
+const DisposalSite = require('./DisposalSite');
+const TripLoad = require('./TripLoad');
 
 // Bog'lanishlarni o'rnatish
 
@@ -238,6 +244,124 @@ WorkStatusReason.belongsTo(User, {
   as: 'creator'
 });
 
+// === 206 Xisobot associations ===
+
+// TripSheet associations
+TripSheet.belongsTo(Vehicle, { 
+  foreignKey: 'vehicle_id',
+  as: 'vehicle'
+});
+TripSheet.belongsTo(Employee, { 
+  foreignKey: 'driver_id',
+  as: 'driver'
+});
+TripSheet.belongsTo(Employee, { 
+  foreignKey: 'loader1_id',
+  as: 'loader1'
+});
+TripSheet.belongsTo(Employee, { 
+  foreignKey: 'loader2_id',
+  as: 'loader2'
+});
+TripSheet.belongsTo(FuelStation, { 
+  foreignKey: 'fuel_station_id',
+  as: 'fuel_station'
+});
+TripSheet.belongsTo(User, { 
+  foreignKey: 'submitted_by',
+  as: 'submitter'
+});
+TripSheet.belongsTo(User, { 
+  foreignKey: 'approved_by',
+  as: 'approver'
+});
+
+// TripSheet -> TripLoad
+TripSheet.hasMany(TripLoad, {
+  foreignKey: 'trip_sheet_id',
+  as: 'loads'
+});
+
+// TripLoad associations
+TripLoad.belongsTo(TripSheet, { 
+  foreignKey: 'trip_sheet_id',
+  as: 'trip_sheet'
+});
+TripLoad.belongsTo(DisposalSite, { 
+  foreignKey: 'disposal_site_id',
+  as: 'disposal_site'
+});
+
+// DisposalSite associations
+DisposalSite.hasMany(TripLoad, {
+  foreignKey: 'disposal_site_id',
+  as: 'trip_loads'
+});
+
+// Vehicle associations (qo'shimcha)
+Vehicle.hasMany(TripSheet, {
+  foreignKey: 'vehicle_id',
+  as: 'trip_sheets'
+});
+
+// Employee associations (qo'shimcha)
+Employee.hasMany(TripSheet, {
+  foreignKey: 'driver_id',
+  as: 'driven_trips'
+});
+Employee.hasMany(TripSheet, {
+  foreignKey: 'loader1_id',
+  as: 'loaded_trips_1'
+});
+Employee.hasMany(TripSheet, {
+  foreignKey: 'loader2_id',
+  as: 'loaded_trips_2'
+});
+
+// User associations (operator/admin uchun)
+User.hasMany(TripSheet, {
+  foreignKey: 'submitted_by',
+  as: 'submitted_trips'
+});
+User.hasMany(TripSheet, {
+  foreignKey: 'approved_by',
+  as: 'approved_trips'
+});
+
+// FuelStation associations (qo'shimcha)
+FuelStation.hasMany(TripSheet, {
+  foreignKey: 'fuel_station_id',
+  as: 'trip_sheets'
+});
+
+// Employee bog'lanishlar
+Employee.belongsTo(Company, {
+  foreignKey: 'company_id',
+  as: 'company'
+});
+Company.hasMany(Employee, {
+  foreignKey: 'company_id',
+  as: 'employees'
+});
+
+Employee.belongsTo(District, {
+  foreignKey: 'district_id',
+  as: 'district'
+});
+District.hasMany(Employee, {
+  foreignKey: 'district_id',
+  as: 'employees'
+});
+
+Employee.belongsTo(Vehicle, {
+  foreignKey: 'vehicle_id',
+  as: 'vehicle'
+});
+Vehicle.hasOne(Employee, {
+  foreignKey: 'vehicle_id',
+  as: 'assigned_employee'
+});
+
 // VehicleWorkStatus bog'lanishlar
 Vehicle.hasMany(VehicleWorkStatus, {
   foreignKey: 'vehicle_id',
@@ -303,6 +427,7 @@ module.exports = {
   Neighborhood,
   Role,
   User,
+  Employee,
   LegalEntity,
   Contract,
   Vehicle,
@@ -311,5 +436,10 @@ module.exports = {
   FuelStation,
   DistrictFuelStation,
   WorkStatusReason,
-  VehicleWorkStatus
+  VehicleWorkStatus,
+  
+  // 206 Xisobot models
+  TripSheet,
+  DisposalSite,
+  TripLoad
 };

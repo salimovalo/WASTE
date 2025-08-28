@@ -8,9 +8,9 @@ import {
   Progress,
   Table,
   Select,
-  DatePicker,
   Space,
-  Spin
+  Spin,
+  Tag
 } from 'antd';
 import { 
   CarOutlined, 
@@ -18,20 +18,23 @@ import {
   ToolOutlined,
   BarChartOutlined,
   AlertOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined,
+  CalendarOutlined
 } from '@ant-design/icons';
 import api from '../../services/api';
+import moment from 'moment';
+import useDateStore from '../../stores/dateStore';
 
 const { Title } = Typography;
 const { Option } = Select;
-const { RangePicker } = DatePicker;
 
 const Dashboard = () => {
-
   const [loading, setLoading] = useState(false);
   const [statistics, setStatistics] = useState({});
   const [recentActivity] = useState([]);
-  const [dateRange] = useState([]);
+  
+  const { selectedDate } = useDateStore();
+
 
   // Statistikani yuklash
   const fetchStatistics = async () => {
@@ -244,11 +247,10 @@ const Dashboard = () => {
               title="Oxirgi faoliyat"
               extra={
                 <Space>
-                  <RangePicker 
-                    value={dateRange}
-                    onChange={() => {}}
-                    placeholder={['Boshlanish', 'Tugash']}
-                  />
+                  <Tag color="blue" style={{ padding: '6px 12px', fontSize: '14px' }}>
+                    <CalendarOutlined /> 
+                    {selectedDate && moment.isMoment(selectedDate) ? selectedDate.format('DD.MM.YYYY') : moment().format('DD.MM.YYYY')}
+                  </Tag>
                   <Select placeholder="Texnikani tanlang" style={{ width: 200 }}>
                     <Option value="all">Barcha texnikalar</Option>
                   </Select>

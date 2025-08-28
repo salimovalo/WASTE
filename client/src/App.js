@@ -2,9 +2,10 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ConfigProvider, App as AntdApp } from 'antd';
-import locale from 'antd/locale/en_US';
+import uzUZ from './locales/uz_UZ';
 import 'antd/dist/reset.css';
 import moment from 'moment';
+import 'moment/locale/uz-latn';
 import { useAuthStore } from './stores/authStore';
 import Layout from './components/Layout/Layout';
 import PermissionGuard from './components/PermissionGuard/PermissionGuard';
@@ -17,6 +18,7 @@ import Users from './pages/SuperAdmin/Users';
 import PhysicalPersons from './pages/PhysicalPersons/PhysicalPersons';
 import LegalEntities from './pages/LegalEntities/LegalEntities';
 import VehiclesRouter from './pages/Vehicles/VehiclesRouter';
+import DataEntry from './pages/DataEntry/DataEntry';
 import ServiceQuality from './pages/ServiceQuality/ServiceQuality';
 import Employees from './pages/Employees/Employees';
 import FuelStations from './pages/FuelStations/FuelStations';
@@ -24,25 +26,28 @@ import Reports from './pages/Reports/Reports';
 import Settings from './pages/Settings/Settings';
 
 // Global moment.js locale sozlamalari
-moment.locale('uz-latn', {
-  months: [
-    'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
-    'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'
-  ],
-  monthsShort: [
-    'Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun',
-    'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'
-  ],
-  weekdays: [
-    'Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'
-  ],
-  weekdaysShort: ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan'],
-  weekdaysMin: ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh'],
-  week: {
-    dow: 1, // Monday is the first day of the week
-    doy: 4  // The week that contains Jan 4th is the first week of the year
-  }
-});
+// Avval locale yaratish, keyin o'rnatish
+if (!moment.locales().includes('uz-latn')) {
+  moment.defineLocale('uz-latn', {
+    months: [
+      'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+      'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'
+    ],
+    monthsShort: [
+      'Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun',
+      'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'
+    ],
+    weekdays: [
+      'Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'
+    ],
+    weekdaysShort: ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan'],
+    weekdaysMin: ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh'],
+    week: {
+      dow: 1, // Monday is the first day of the week
+      doy: 4  // The week that contains Jan 4th is the first week of the year
+    }
+  });
+}
 moment.locale('uz-latn');
 
 // React Query client
@@ -103,9 +108,14 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ConfigProvider theme={theme} locale={locale}>
+      <ConfigProvider theme={theme} locale={uzUZ}>
         <AntdApp>
-          <Router>
+          <Router 
+            future={{ 
+              v7_startTransition: true,
+              v7_relativeSplatPath: true
+            }}
+          >
             <div className="App">
             <Routes>
               {/* Public routes */}
@@ -143,6 +153,7 @@ function App() {
                             <VehiclesRouter />
                           </PermissionGuard>
                         } />
+                        <Route path="/data-entry/*" element={<DataEntry />} />
                         <Route path="/service-quality/*" element={<ServiceQuality />} />
                         <Route path="/employees/*" element={<Employees />} />
                         <Route path="/fuel-stations/*" element={

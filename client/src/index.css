@@ -350,3 +350,48 @@ code {
     border-width: 2px;
   }
 }
+
+/* GLOBAL: Kalendar yil/oy navigatsiyasini taqiqlash - BUTUN TIZIM UCHUN */
+.ant-picker-dropdown .ant-picker-year-btn,
+.ant-picker-dropdown .ant-picker-month-btn {
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.4 !important;
+  user-select: none !important;
+}
+
+.ant-picker-dropdown .ant-picker-header-view button {
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+  color: #bfbfbf !important;
+  user-select: none !important;
+}
+
+.ant-picker-dropdown .ant-picker-year-btn:hover,
+.ant-picker-dropdown .ant-picker-month-btn:hover,
+.ant-picker-dropdown .ant-picker-header-view button:hover {
+  background: transparent !important;
+  color: #bfbfbf !important;
+  border: none !important;
+}
+
+/* Yil/oy super selector'larini ham taqiqlash */
+.ant-picker-dropdown .ant-picker-decade-panel,
+.ant-picker-dropdown .ant-picker-year-panel,
+.ant-picker-dropdown .ant-picker-month-panel {
+  display: none !important;
+}
+
+/* Kalendar headeridagi nav buttonlarini taqiqlash */
+.ant-picker-dropdown .ant-picker-header .ant-picker-header-super-prev-btn,
+.ant-picker-dropdown .ant-picker-header .ant-picker-header-super-next-btn {
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.3 !important;
+}
+
+/* Bugungi kun tugmasini yashirish (faqat joriy oy/yilda ishlaydi) */
+.ant-picker-dropdown .ant-picker-today-btn {
+  display: block !important;
+  opacity: 1 !important;
+}

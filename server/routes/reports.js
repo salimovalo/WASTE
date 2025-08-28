@@ -47,8 +47,10 @@ router.get('/dashboard', authenticate, async (req, res) => {
       Neighborhood.count({
         include: [{
           model: District,
+          as: 'district',
           where: districtWhere,
-          attributes: []
+          attributes: [],
+          required: true
         }],
         where: neighborhoodWhere
       }),

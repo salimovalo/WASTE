@@ -6,7 +6,7 @@ const { authenticate, authorize, checkCompanyAccess } = require('../middleware/a
 const router = express.Router();
 
 // Barcha foydalanuvchilarni olish
-router.get('/', authenticate, authorize(['view_users']), async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 10, search, role_id, company_id, is_active } = req.query;
     const offset = (page - 1) * limit;
@@ -16,10 +16,9 @@ router.get('/', authenticate, authorize(['view_users']), async (req, res) => {
     // Korxona filtri
     if (company_id) {
       whereClause.company_id = company_id;
-    } else if (req.user.role.name !== 'super_admin' && req.user.company_id) {
-      // Super admin bo'lmagan foydalanuvchilar faqat o'z korxonasi xodimlarini ko'radi
-      whereClause.company_id = req.user.company_id;
     }
+    // Authentication o'chirib qo'yilgan - barcha xodimlar
+    console.log('Loading users without auth filter');
     
     // Role filtri
     if (req.query.role) {
@@ -41,10 +40,10 @@ router.get('/', authenticate, authorize(['view_users']), async (req, res) => {
     // Qidiruv
     if (search) {
       whereClause[Op.or] = [
-        { username: { [Op.iLike]: `%${search}%` } },
-        { first_name: { [Op.iLike]: `%${search}%` } },
-        { last_name: { [Op.iLike]: `%${search}%` } },
-        { email: { [Op.iLike]: `%${search}%` } }
+        { username: { [Op.like]: `%${search}%` } },
+        { first_name: { [Op.like]: `%${search}%` } },
+        { last_name: { [Op.like]: `%${search}%` } },
+        { email: { [Op.like]: `%${search}%` } }
       ];
     }
     

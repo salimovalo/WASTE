@@ -1,0 +1,229 @@
+.trip-sheet-list {
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: calc(100vh - 64px);
+}
+
+.header-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  margin-bottom: 24px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.vehicle-card {
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  position: relative;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+}
+
+.vehicle-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.vehicle-card.completed {
+  border-color: #52c41a;
+  background: linear-gradient(145deg, #f6ffed, #ffffff);
+}
+
+.vehicle-card.submitted {
+  border-color: #1890ff;
+  background: linear-gradient(145deg, #e6f7ff, #ffffff);
+}
+
+.vehicle-card.draft {
+  border-color: #faad14;
+  background: linear-gradient(145deg, #fffbe6, #ffffff);
+}
+
+.vehicle-card.pending {
+  border-color: #fa8c16;
+  background: linear-gradient(145deg, #fff7e6, #ffffff);
+}
+
+.vehicle-card.not_started {
+  border-color: #d9d9d9;
+  background: linear-gradient(145deg, #fafafa, #ffffff);
+}
+
+.vehicle-cover {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: white;
+  border-radius: 50%;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.status-icon.completed {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(82, 196, 26, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(82, 196, 26, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(82, 196, 26, 0);
+  }
+}
+
+.vehicle-card .ant-card-actions {
+  background: rgba(255, 255, 255, 0.9);
+  border-top: 1px solid #f0f0f0;
+}
+
+.vehicle-card .ant-card-actions > li {
+  margin: 8px 0;
+}
+
+.vehicle-card .ant-card-actions > li:not(:last-child) {
+  border-right: 1px solid #f0f0f0;
+}
+
+.vehicle-card .ant-card-actions .anticon {
+  font-size: 18px;
+  transition: all 0.3s ease;
+}
+
+.vehicle-card .ant-card-actions .anticon:hover {
+  transform: scale(1.2);
+}
+
+/* Badge ribbon styling */
+.ant-badge-ribbon-wrapper .ant-badge-ribbon {
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Progress styling */
+.ant-progress-circle .ant-progress-text {
+  color: #666;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Filters styling */
+.ant-input-search .ant-input-group .ant-input-affix-wrapper {
+  border-radius: 8px;
+}
+
+.ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  border-radius: 8px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .trip-sheet-list {
+    padding: 16px;
+  }
+  
+  .header-card {
+    margin-bottom: 16px;
+  }
+  
+  .vehicle-card {
+    margin-bottom: 16px;
+  }
+  
+  .vehicle-cover {
+    min-height: 100px;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 576px) {
+  .trip-sheet-list {
+    padding: 8px;
+  }
+  
+  .header-card .ant-card-body {
+    padding: 16px;
+  }
+  
+  .vehicle-card .ant-card-body {
+    padding: 16px 12px;
+  }
+  
+  .vehicle-cover {
+    min-height: 80px;
+    padding: 12px;
+  }
+  
+  .vehicle-cover .ant-avatar {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 20px;
+  }
+}
+
+/* Empty state */
+.ant-empty {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  padding: 40px;
+  backdrop-filter: blur(10px);
+}
+
+/* Search and filter styling */
+.ant-input-affix-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.ant-select-selector {
+  border-radius: 8px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.ant-picker {
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Card meta styling */
+.ant-card-meta-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.ant-card-meta-description {
+  color: #666;
+  line-height: 1.4;
+}
+
+/* Tag styling */
+.ant-tag {
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  border: none;
+}
+
+/* Loading state */
+.ant-spin-container {
+  transition: opacity 0.3s ease;
+}

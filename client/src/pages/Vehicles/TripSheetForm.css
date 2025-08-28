@@ -1,0 +1,258 @@
+.trip-sheet-form {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+.trip-sheet-form .ant-steps {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.trip-sheet-form .ant-steps-item {
+  cursor: pointer;
+}
+
+.trip-sheet-form .ant-steps-item-title {
+  font-weight: 600;
+}
+
+.steps-content {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 32px;
+  border-radius: 8px;
+  margin: 24px 0;
+  min-height: 500px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.steps-action {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* Form styling */
+.trip-sheet-form .ant-form-item-label > label {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.trip-sheet-form .ant-input,
+.trip-sheet-form .ant-input-number,
+.trip-sheet-form .ant-select-selector,
+.trip-sheet-form .ant-picker {
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.trip-sheet-form .ant-input:focus,
+.trip-sheet-form .ant-input-number:focus,
+.trip-sheet-form .ant-select-focused .ant-select-selector,
+.trip-sheet-form .ant-picker:focus {
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Upload area styling */
+.trip-sheet-form .ant-upload-drag {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+}
+
+.trip-sheet-form .ant-upload-drag:not(.ant-upload-disabled):hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.trip-sheet-form .ant-upload-drag .ant-upload-drag-container {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.trip-sheet-form .ant-upload-drag .anticon {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Table styling */
+.trip-sheet-form .ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.trip-sheet-form .ant-table-thead > tr > th {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  border: none;
+}
+
+.trip-sheet-form .ant-table-tbody > tr:hover > td {
+  background: rgba(24, 144, 255, 0.05);
+}
+
+/* Button styling */
+.trip-sheet-form .ant-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+}
+
+.trip-sheet-form .ant-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.trip-sheet-form .ant-btn-dashed {
+  border: 2px dashed #d9d9d9;
+  transition: all 0.3s ease;
+}
+
+.trip-sheet-form .ant-btn-dashed:hover {
+  border-color: #40a9ff;
+  color: #40a9ff;
+  transform: translateY(-1px);
+}
+
+/* Divider styling */
+.trip-sheet-form .ant-divider {
+  margin: 24px 0;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.trip-sheet-form .ant-divider-inner-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+/* Card headers */
+.trip-sheet-form .ant-typography h4 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #ecf0f1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .trip-sheet-form {
+    padding: 16px;
+    margin: 8px;
+  }
+  
+  .steps-content {
+    padding: 20px 16px;
+    min-height: 400px;
+  }
+  
+  .trip-sheet-form .ant-steps {
+    padding: 16px;
+  }
+  
+  .steps-action {
+    padding: 16px;
+  }
+  
+  .trip-sheet-form .ant-col {
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 576px) {
+  .trip-sheet-form {
+    padding: 12px;
+    margin: 4px;
+  }
+  
+  .steps-content {
+    padding: 16px 12px;
+    min-height: 350px;
+  }
+  
+  .trip-sheet-form .ant-steps .ant-steps-item-title {
+    font-size: 12px;
+  }
+  
+  .trip-sheet-form .ant-steps-item-description {
+    display: none;
+  }
+}
+
+/* Success indicators */
+.trip-sheet-form .success-indicator {
+  color: #52c41a;
+  animation: successPulse 2s ease-in-out infinite;
+}
+
+@keyframes successPulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Error styling */
+.trip-sheet-form .ant-form-item-has-error .ant-input,
+.trip-sheet-form .ant-form-item-has-error .ant-input-number,
+.trip-sheet-form .ant-form-item-has-error .ant-select-selector {
+  box-shadow: 0 2px 8px rgba(255, 77, 79, 0.2);
+}
+
+/* Loading states */
+.trip-sheet-form .ant-spin-container {
+  transition: all 0.3s ease;
+}
+
+.trip-sheet-form .ant-spin-blur {
+  opacity: 0.7;
+}
+
+/* Tooltip styling */
+.trip-sheet-form .ant-tooltip-inner {
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 6px;
+}
+
+/* Tag styling */
+.trip-sheet-form .ant-tag {
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Select dropdown */
+.trip-sheet-form .ant-select-dropdown {
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+}
+
+.trip-sheet-form .ant-select-item {
+  border-radius: 4px;
+  margin: 2px 8px;
+}
+
+/* Progress animations */
+.trip-sheet-form .ant-steps-item-finish .ant-steps-item-icon {
+  animation: stepComplete 0.5s ease-out;
+}
+
+@keyframes stepComplete {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}

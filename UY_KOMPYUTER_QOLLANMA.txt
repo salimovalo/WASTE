@@ -1,0 +1,128 @@
+===============================================
+UYDAGI KOMPYUTERDA WASTE PROYEKT BILAN ISHLASH
+===============================================
+
+🔧 1. KERAKLI DASTURLARNI O'RNATING
+=====================================
+
+Git o'rnatish:
+--------------
+1. https://git-scm.com/download/windows sahifasiga o'ting
+2. "Git for Windows" ni yuklab oling
+3. O'rnating (barcha standart sozlamalarni qoldiring)
+
+Node.js o'rnatish:
+------------------
+1. https://nodejs.org sahifasiga o'ting  
+2. LTS versiyasini yuklab oling
+3. O'rnating
+
+📥 2. PROYEKTNI GITHUB'DAN YUKLAB OLING
+=======================================
+
+PowerShell yoki Command Prompt'ni oching va quyidagi komandalarni bajaring:
+
+# Istalgan papkaga o'ting (masalan Desktop)
+cd C:\Users\[SIZNING_ISMINGIZ]\Desktop
+
+# Proyektni clone qiling
+git clone https://github.com/salimovalo/WASTE.git
+
+# Proyekt papkasiga kiring
+cd WASTE
+
+📦 3. DEPENDENCY'LARNI O'RNATING
+================================
+
+# Server uchun
+cd server
+npm install
+
+# Client uchun  
+cd ../client
+npm install
+
+# Asosiy papkaga qaytish
+cd ..
+
+🗄️ 4. DATABASE'NI SOZLANG
+==========================
+
+# Server papkasida
+cd server
+
+# Database yaratish va ma'lumot to'ldirish
+npm run db:seed
+
+🚀 5. PROYEKTNI ISHGA TUSHIRING
+===============================
+
+2 ta alohida terminal oynasini oching:
+
+BIRINCHI TERMINAL (Server):
+--------------------------
+cd server
+npm run dev
+
+IKKINCHI TERMINAL (Client):
+---------------------------
+cd client  
+npm start
+
+🔐 6. TIZIMGA KIRISH
+====================
+
+Browser'da http://localhost:3000 ga o'ting
+
+Default userlar:
+- Super Admin: admin / admin123
+- ABF Admin: abf_admin / abf123
+- ZW Admin: zw_admin / zw123  
+- Operator: operator1 / op123
+
+🔄 7. KELAJAKDA YANGILANISHLAR BILAN ISHLASH
+============================================
+
+Yangilanishlarni GitHub'dan olish:
+---------------------------------
+git pull origin main
+
+O'zgarishlarni GitHub'ga yuborish:
+----------------------------------
+git add .
+git commit -m "Uy kompyuteridan yangilanish"
+git push origin main
+
+💡 FOYDALI MASLAHATLAR
+======================
+
+1. GitHub Desktop o'rnating (osonroq): https://desktop.github.com
+2. VS Code yoki Cursor editorni o'rnating
+3. Har safar ishlashdan oldin "git pull" qiling
+4. O'zgarishlar qilgandan so'ng muntazam ravishda GitHub'ga push qiling
+
+🆘 MUAMMOLAR YUZAGA KELSA
+=========================
+
+Git tanilmasa:
+- PowerShell'ni yopib qayta oching
+- Yoki Git Bash ishlatishga harakat qiling
+
+Node.js tanilmasa:
+- Kompyuterni qayta ishga tushiring
+- Node.js to'g'ri o'rnatilganini tekshiring
+
+Database bo'sh bo'lsa:
+- server papkasida "npm run db:seed" qayta bajaring
+
+Port band bo'lsa:
+- Oldingi server jarayonlarini to'xtating
+- Ctrl+C bilan to'xtatish mumkin
+
+===============================================
+MUVAFFAQIYAT! 🎉
+Bu yo'riqnoma bilan uydagi har qanday kompyuterda 
+proyekt bilan ishlay olasiz.
+===============================================
+
+

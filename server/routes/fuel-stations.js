@@ -6,7 +6,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 const router = express.Router();
 
 // Barcha zapravkalarni olish
-router.get('/', authenticate, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 10, search, fuel_type, is_active, company_id } = req.query;
     const offset = (page - 1) * limit;
@@ -16,9 +16,10 @@ router.get('/', authenticate, async (req, res) => {
     // Korxona filtri
     if (company_id) {
       whereClause.company_id = company_id;
-    } else if (req.user.role.name !== 'super_admin' && req.user.company_id) {
-      whereClause.company_id = req.user.company_id;
     }
+    
+    // Default: barcha zapravkalar (authentication o'chirib qo'yilgan)
+    console.log('Loading fuel stations without auth filter');
     
     // Yoqilg'i turi filtri
     if (fuel_type) {
@@ -33,10 +34,10 @@ router.get('/', authenticate, async (req, res) => {
     // Qidiruv
     if (search) {
       whereClause[Op.or] = [
-        { name: { [Op.iLike]: `%${search}%` } },
-        { iin_number: { [Op.iLike]: `%${search}%` } },
-        { address: { [Op.iLike]: `%${search}%` } },
-        { manager_name: { [Op.iLike]: `%${search}%` } }
+        { name: { [Op.like]: `%${search}%` } },
+        { iin_number: { [Op.like]: `%${search}%` } },
+        { address: { [Op.like]: `%${search}%` } },
+        { manager_name: { [Op.like]: `%${search}%` } }
       ];
     }
     

@@ -1,0 +1,31 @@
+========================================
+  TEZKOR ISHGA TUSHIRISH QO'LLANMASI
+  Quick Start Guide
+========================================
+
+1️⃣ BIRINCHI MARTA O'RNATISH:
+   - install-dependencies.bat
+   - init-database.bat
+
+2️⃣ TIZIMNI ISHGA TUSHIRISH:
+   - start-app.bat
+
+3️⃣ KIRISH MA'LUMOTLARI:
+   - Login: admin
+   - Parol: admin123
+   - URL: http://localhost:3000
+
+4️⃣ TIZIM TEKSHIRUVI:
+   - check-system.bat
+   - test-system.bat
+
+5️⃣ MUAMMO BO'LSA:
+   - README_UZ.md faylini o'qing
+   - SYSTEM_OPTIMIZATION_GUIDE.md ni ko'ring
+   - Loglarni tekshiring: server/logs/
+
+========================================
+  Muvaffaqiyatli foydalanish!
+========================================
+
+

@@ -29,8 +29,8 @@ router.get('/', authenticate, async (req, res) => {
     // Qidiruv
     if (search) {
       whereClause[Op.or] = [
-        { name: { [Op.iLike]: `%${search}%` } },
-        { code: { [Op.iLike]: `%${search}%` } }
+        { name: { [Op.like]: `%${search}%` } },
+        { code: { [Op.like]: `%${search}%` } }
       ];
     }
     

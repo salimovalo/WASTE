@@ -4,7 +4,6 @@ import {
   Typography, 
   Table, 
   Button, 
-  DatePicker, 
   Form,
   Input,
   InputNumber,
@@ -18,7 +17,8 @@ import {
   Progress,
   Tabs,
   Alert,
-  Tag
+  Tag,
+  DatePicker
 } from 'antd';
 import { 
   PlusOutlined, 
@@ -27,18 +27,20 @@ import {
   CarOutlined,
   BarChartOutlined,
   ShopOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  CalendarOutlined
 } from '@ant-design/icons';
 import moment from 'moment';
 import { useAuthStore } from '../../stores/authStore';
 import api from '../../services/api';
+import useDateStore from '../../stores/dateStore';
 
 const { Title } = Typography;
 const { Option } = Select;
-const { RangePicker } = DatePicker;
 
 const Fuel = () => {
   const { user } = useAuthStore();
+  const { selectedDate, getApiDate } = useDateStore();
   const [loading, setLoading] = useState(false);
   const [fuelRecords, setFuelRecords] = useState([]);
   const [vehicles, setVehicles] = useState([]);
@@ -48,18 +50,22 @@ const Fuel = () => {
   const [stationModalVisible, setStationModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [editingStation, setEditingStation] = useState(null);
-  const [dateRange, setDateRange] = useState([moment().startOf('month'), moment().endOf('month')]);
+
   const [form] = Form.useForm();
   const [stationForm] = Form.useForm();
 
-  // Yoqilg'i yozuvlarini yuklash
+  // Yoqilg'i yozuvlarini yuklash - oylik
   const fetchFuelRecords = async () => {
     setLoading(true);
     try {
+      const currentDate = selectedDate && moment.isMoment(selectedDate) ? selectedDate : moment();
+      const startDate = moment(currentDate).startOf('month');
+      const endDate = moment(currentDate).endOf('month');
+      
       const response = await api.get('/technics/fuel-records', {
         params: {
-          start_date: dateRange[0]?.format('YYYY-MM-DD'),
-          end_date: dateRange[1]?.format('YYYY-MM-DD')
+          start_date: startDate.format('YYYY-MM-DD'),
+          end_date: endDate.format('YYYY-MM-DD')
         }
       });
       setFuelRecords(response.data.records || []);
@@ -74,10 +80,14 @@ const Fuel = () => {
   // Yoqilg'i statistikasini yuklash
   const fetchFuelStats = async () => {
     try {
+      const currentDate = selectedDate && moment.isMoment(selectedDate) ? selectedDate : moment();
+      const startDate = moment(currentDate).startOf('month');
+      const endDate = moment(currentDate).endOf('month');
+      
       const response = await api.get('/technics/fuel-stats', {
         params: {
-          start_date: dateRange[0]?.format('YYYY-MM-DD'),
-          end_date: dateRange[1]?.format('YYYY-MM-DD')
+          start_date: startDate.format('YYYY-MM-DD'),
+          end_date: endDate.format('YYYY-MM-DD')
         }
       });
       setFuelStats(response.data);
@@ -116,11 +126,20 @@ const Fuel = () => {
   }, []);
 
   useEffect(() => {
-    if (dateRange[0] && dateRange[1]) {
+    fetchFuelRecords();
+    fetchFuelStats();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Global sana o'zgarganda ma'lumotlarni yuklash
+  useEffect(() => {
+    const handleDateChange = () => {
       fetchFuelRecords();
       fetchFuelStats();
-    }
-  }, [dateRange]); // eslint-disable-line react-hooks/exhaustive-deps
+    };
+    
+    window.addEventListener('dateChanged', handleDateChange);
+    return () => window.removeEventListener('dateChanged', handleDateChange);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Jadval ustunlari
   const columns = [
@@ -298,11 +317,10 @@ const Fuel = () => {
           <ApiOutlined /> Yoqilg'i boshqaruvi
         </Title>
         <Space>
-          <RangePicker
-            value={dateRange}
-            onChange={setDateRange}
-            format="DD.MM.YYYY"
-          />
+          <Tag color="blue" style={{ padding: '4px 12px', fontSize: '14px' }}>
+            <CalendarOutlined /> 
+            {selectedDate && moment.isMoment(selectedDate) ? selectedDate.format('MMMM YYYY') : moment().format('MMMM YYYY')}
+          </Tag>
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -618,7 +636,14 @@ const Fuel = () => {
                 label="Sana"
                 rules={[{ required: true, message: 'Sanani tanlang' }]}
               >
-                <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
+                <DatePicker 
+                  style={{ width: '100%' }} 
+                  format="DD.MM.YYYY"
+                  disabledDate={(current) => current && current.isAfter(moment().endOf('day'))}
+                  inputReadOnly
+                  picker="date"
+                  placeholder="Sanani tanlang"
+                />
               </Form.Item>
             </Col>
           </Row>

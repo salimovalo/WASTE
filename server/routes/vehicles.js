@@ -25,7 +25,46 @@ const upload = multer({
 });
 
 // Barcha texnikalarni olish
-router.get('/', authenticate, requirePermission(PERMISSIONS.VIEW_VEHICLES), async (req, res) => {
+// Bitta texnikani ID orqali olish
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const vehicle = await Vehicle.findByPk(id, {
+      include: [
+        {
+          model: Company,
+          attributes: ['name', 'code']
+        },
+        {
+          model: District,
+          attributes: ['name', 'code']
+        }
+      ]
+    });
+    
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: 'Texnika topilmadi'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: vehicle
+    });
+  } catch (error) {
+    console.error('Get vehicle by ID error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server xatosi',
+      error: error.message
+    });
+  }
+});
+
+router.get('/', authenticate, async (req, res) => {
   try {
     const { page = 1, limit = 10, search, vehicle_type, fuel_type, is_active, company_id, district_id } = req.query;
     const offset = (page - 1) * limit;
@@ -34,6 +73,14 @@ router.get('/', authenticate, requirePermission(PERMISSIONS.VIEW_VEHICLES), asyn
     
     // User role bo'yicha data filtering
     whereClause = applyDataFiltering(req.user, whereClause);
+    
+    console.log('User filtering applied:', {
+      user_id: req.user?.id,
+      role: req.user?.role?.name,
+      company_id: req.user?.company_id,
+      district_id: req.user?.district_id,
+      whereClause
+    });
     
     // Qo'shimcha filtri (agar berilgan bo'lsa)
     if (company_id) {
@@ -62,10 +109,10 @@ router.get('/', authenticate, requirePermission(PERMISSIONS.VIEW_VEHICLES), asyn
     // Qidiruv
     if (search) {
       whereClause[Op.or] = [
-        { plate_number: { [Op.iLike]: `%${search}%` } },
-        { brand: { [Op.iLike]: `%${search}%` } },
-        { model: { [Op.iLike]: `%${search}%` } },
-        { technical_passport_number: { [Op.iLike]: `%${search}%` } }
+        { plate_number: { [Op.like]: `%${search}%` } },
+        { brand: { [Op.like]: `%${search}%` } },
+        { model: { [Op.like]: `%${search}%` } },
+        { technical_passport_number: { [Op.like]: `%${search}%` } }
       ];
     }
     

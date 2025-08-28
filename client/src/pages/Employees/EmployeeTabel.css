@@ -1,0 +1,248 @@
+.employee-tabel {
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: calc(100vh - 64px);
+}
+
+.employee-tabel .header-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  margin-bottom: 24px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.employee-tabel .ant-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.employee-tabel .ant-card-head {
+  background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.employee-tabel .ant-card-head-title {
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.tabel-calendar .ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tabel-calendar .ant-table-thead > tr > th {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-align: center;
+  padding: 8px 4px;
+}
+
+.tabel-calendar .ant-table-tbody > tr > td {
+  border: 1px solid #e8e8e8;
+  padding: 4px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.tabel-calendar .ant-table-tbody > tr:hover > td {
+  background: rgba(24, 144, 255, 0.02);
+}
+
+/* First column (employee info) styling */
+.tabel-calendar .ant-table-tbody > tr > td:first-child {
+  text-align: left;
+  padding: 8px;
+  background: #fafafa;
+  min-width: 200px;
+}
+
+.tabel-calendar .ant-table-tbody > tr > td:last-child {
+  background: #fafafa;
+  padding: 8px;
+  min-width: 150px;
+}
+
+/* Weekend columns styling */
+.tabel-calendar .ant-table-thead > tr > th:nth-child(7n+2),
+.tabel-calendar .ant-table-thead > tr > th:nth-child(7n+3) {
+  background: linear-gradient(135deg, #fa8c16 0%, #fa541c 100%);
+}
+
+.tabel-calendar .ant-table-tbody > tr > td:nth-child(7n+2),
+.tabel-calendar .ant-table-tbody > tr > td:nth-child(7n+3) {
+  background: rgba(250, 140, 22, 0.1);
+}
+
+/* Day cell hover effects */
+.tabel-calendar .ant-table-tbody > tr > td > div {
+  transition: all 0.2s ease;
+}
+
+.tabel-calendar .ant-table-tbody > tr > td > div:hover {
+  transform: scale(1.1);
+  z-index: 10;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Attendance status colors */
+.attendance-present {
+  background: #f6ffed;
+  border: 1px solid #52c41a;
+  color: #52c41a;
+}
+
+.attendance-absent {
+  background: #fff2f0;
+  border: 1px solid #ff4d4f;
+  color: #ff4d4f;
+}
+
+.attendance-sick {
+  background: #fff7e6;
+  border: 1px solid #fa8c16;
+  color: #fa8c16;
+}
+
+.attendance-weekend {
+  background: #f0f0f0;
+  border: 1px solid #d9d9d9;
+  color: #8c8c8c;
+}
+
+/* Statistics column styling */
+.employee-tabel .ant-statistic-title {
+  color: #595959;
+  font-weight: 500;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.employee-tabel .ant-statistic-content {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Progress bar in statistics */
+.tabel-calendar .ant-progress-line {
+  margin: 4px 0 0 0;
+}
+
+.tabel-calendar .ant-progress-bg {
+  border-radius: 4px;
+}
+
+/* Button styling */
+.employee-tabel .ant-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.employee-tabel .ant-btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.employee-tabel .ant-btn:not(.ant-btn-primary) {
+  transition: all 0.3s ease;
+}
+
+.employee-tabel .ant-btn:not(.ant-btn-primary):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Avatar styling */
+.employee-tabel .ant-avatar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Input and Select styling */
+.employee-tabel .ant-input,
+.employee-tabel .ant-select-selector {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.employee-tabel .ant-input:focus,
+.employee-tabel .ant-input-focused,
+.employee-tabel .ant-select-focused .ant-select-selector {
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Print styles */
+@media print {
+  .employee-tabel {
+    background: white;
+    padding: 0;
+  }
+  
+  .employee-tabel .header-card,
+  .employee-tabel .ant-card {
+    box-shadow: none;
+    border: 1px solid #000;
+    margin-bottom: 10px;
+  }
+  
+  .tabel-calendar .ant-table {
+    font-size: 8px;
+  }
+  
+  .tabel-calendar .ant-table-thead > tr > th,
+  .tabel-calendar .ant-table-tbody > tr > td {
+    padding: 2px;
+    font-size: 8px;
+  }
+  
+  .tabel-calendar .ant-table-tbody > tr > td > div {
+    font-size: 8px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  .employee-tabel {
+    padding: 16px;
+  }
+  
+  .tabel-calendar .ant-table-thead > tr > th,
+  .tabel-calendar .ant-table-tbody > tr > td {
+    padding: 2px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .employee-tabel {
+    padding: 12px;
+  }
+  
+  .employee-tabel .ant-statistic-content {
+    font-size: 14px;
+  }
+  
+  .tabel-calendar .ant-table-thead > tr > th,
+  .tabel-calendar .ant-table-tbody > tr > td {
+    padding: 1px;
+    font-size: 9px;
+  }
+  
+  .tabel-calendar .ant-table-tbody > tr > td > div {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+}

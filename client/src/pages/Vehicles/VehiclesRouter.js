@@ -6,9 +6,7 @@ import Vehicles from './Vehicles';
 import Dashboard from './Dashboard';
 import Fuel from './Fuel';
 import DailyWorkStatus from './DailyWorkStatus';
-import DailyWorkStatusEntry from './DailyWorkStatusEntry';
-import DailyWorkStatusStatistics from './DailyWorkStatusStatistics';
-import WorkStatusReasons from './WorkStatusReasons';
+// TripSheet sahifalar "Ma'lumotlar kiritish" moduliga ko'chirildi
 
 const VehiclesRouter = () => {
   return (
@@ -19,9 +17,10 @@ const VehiclesRouter = () => {
       <Route path="/daily-work-status" element={<DailyWorkStatus />} />
       <Route path="/fuel" element={<Fuel />} />
       <Route path="/report-206" element={
-        <div style={{ padding: 24, background: 'white', borderRadius: 8, margin: 24 }}>
+        <div style={{ padding: 24, background: 'white', borderRadius: 8, margin: 24, textAlign: 'center' }}>
           <h2>206 Xisoboti</h2>
-          <p>Bu sahifa hali ishlab chiqilmoqda...</p>
+          <p>Bu funksiyalar "Ma'lumotlar kiritish" moduliga ko'chirildi</p>
+          <p><a href="/data-entry/206-report">Ma'lumotlar kiritish > 206 Xisoboti</a></p>
         </div>
       } />
       <Route path="/data-entry" element={

@@ -82,7 +82,7 @@ const User = sequelize.define('User', {
     }
   },
   district_access: {
-    type: DataTypes.JSONB,
+    type: DataTypes.JSON,
     defaultValue: [],
     validate: {
       isValidDistrictAccess(value) {
@@ -106,7 +106,7 @@ const User = sequelize.define('User', {
     allowNull: true
   },
   permissions: {
-    type: DataTypes.JSONB,
+    type: DataTypes.JSON,
     defaultValue: {},
     validate: {
       isValidPermissions(value) {
@@ -114,6 +114,12 @@ const User = sequelize.define('User', {
           throw new Error('Ruxsatlar obyekt ko\'rinishida bo\'lishi kerak');
         }
       }
+    }
+  },
+  full_name: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return `${this.last_name || ''} ${this.first_name || ''}`.trim();
     }
   }
 }, {

@@ -10,7 +10,7 @@ const { requirePermission, PERMISSIONS } = require('../middleware/permissions');
 // Barcha sabablarni olish
 router.get('/', authenticate, requirePermission(PERMISSIONS.VIEW_WORK_REASONS), async (req, res) => {
   try {
-    const { category, is_active = true } = req.query;
+    const { category, is_active } = req.query;
     
     let whereClause = {};
     
@@ -18,9 +18,13 @@ router.get('/', authenticate, requirePermission(PERMISSIONS.VIEW_WORK_REASONS), 
       whereClause.category = category;
     }
     
-    if (is_active !== undefined) {
-      whereClause.is_active = is_active === 'true';
-    }
+    // Default: faqat faol yozuvlar
+    const isActiveFlag = (
+      is_active === undefined
+        ? true
+        : (is_active === 'true' || is_active === true)
+    );
+    whereClause.is_active = isActiveFlag;
 
     const reasons = await WorkStatusReason.findAll({
       where: whereClause,
@@ -48,8 +52,8 @@ router.get('/', authenticate, requirePermission(PERMISSIONS.VIEW_WORK_REASONS), 
   }
 });
 
-// Kategoriyalar ro'yxati
-router.get('/categories', authenticate, async (req, res) => {
+// Kategoriyalar ro'yxati (authentication talab qilmaydi - public ma'lumot)
+router.get('/categories', async (req, res) => {
   try {
     const categories = [
       { value: 'technical', label: 'Texnik muammolar', color: '#ff4d4f' },
@@ -98,12 +102,9 @@ router.post('/', authenticate, async (req, res) => {
       });
     }
 
-    // Bir xil nomli sabab borligini tekshirish (SQLite uchun) 
+    // Bir xil nomli sabab borligini tekshirish
     const existingReason = await WorkStatusReason.findOne({
-      where: sequelize.where(
-        sequelize.fn('LOWER', sequelize.col('work_status_reasons.name')),
-        sequelize.fn('LOWER', name.trim())
-      )
+      where: { name: name.trim() }
     });
 
     if (existingReason) {
@@ -176,17 +177,8 @@ router.put('/:id', authenticate, async (req, res) => {
     if (name && name.trim() !== reason.name) {
       const existingReason = await WorkStatusReason.findOne({
         where: {
-          [Op.and]: [
-            sequelize.where(
-              sequelize.fn('LOWER', sequelize.col('work_status_reasons.name')),
-              sequelize.fn('LOWER', name.trim())
-            ),
-            {
-              id: {
-                [Op.ne]: id
-              }
-            }
-          ]
+          name: name.trim(),
+          id: { [Op.ne]: id }
         }
       });
 

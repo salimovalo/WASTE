@@ -247,7 +247,7 @@ export const RoleGuard = ({ children, allowedRoles, user, fallback = null }) => 
   return children;
 };
 
-export default {
+const permissionUtils = {
   PERMISSIONS,
   hasPermission,
   hasCompanyAccess,
@@ -258,3 +258,5 @@ export default {
   PermissionGuard,
   RoleGuard
 };
+
+export default permissionUtils;

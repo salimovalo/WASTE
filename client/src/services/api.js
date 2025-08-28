@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -97,6 +97,18 @@ export const usersAPI = {
   updatePermissions: (id, data) => api.put(`/users/${id}/permissions`, data),
 };
 
+// Employees API
+export const employeesAPI = {
+  getAll: (params = {}) => api.get('/employees', { params }),
+  getById: (id) => api.get(`/employees/${id}`),
+  create: (data) => api.post('/employees', data),
+  update: (id, data) => api.put(`/employees/${id}`, data),
+  delete: (id) => api.delete(`/employees/${id}`),
+  getStats: (params = {}) => api.get('/employees/stats', { params }),
+  getTodaySchedule: (params = {}) => api.get('/employees/today-schedule', { params }),
+  getRecentActivity: (params = {}) => api.get('/employees/recent-activity', { params }),
+};
+
 // Roles API
 export const rolesAPI = {
   getAll: (params = {}) => api.get('/roles', { params }),
@@ -112,6 +124,31 @@ export const reportsAPI = {
   getAll: (params = {}) => api.get('/reports', { params }),
   create: (data) => api.post('/reports', data),
   export: (type, params = {}) => api.get(`/reports/export/${type}`, { params }),
+};
+
+// Work Status Reasons API
+export const workStatusReasonsAPI = {
+  getAll: (params = {}) => api.get('/work-status-reasons', { params }),
+  getCategories: () => api.get('/work-status-reasons/categories'),
+  create: (data) => api.post('/work-status-reasons', data),
+  update: (id, data) => api.put(`/work-status-reasons/${id}`, data),
+  delete: (id) => api.delete(`/work-status-reasons/${id}`),
+  activate: (id) => api.put(`/work-status-reasons/${id}/activate`),
+};
+
+// Vehicles API (for work status)  
+export const vehiclesAPI = {
+  getAll: (params = {}) => api.get('/technics', { params }),
+  getById: (id) => api.get(`/technics/${id}`),
+  create: (data) => api.post('/technics', data),
+  update: (id, data) => api.put(`/technics/${id}`, data),
+  delete: (id) => api.delete(`/technics/${id}`),
+  getDailyWorkStatus: (params = {}) => api.get('/daily-work-status', { params }),
+  getVehiclesForEntry: (params = {}) => api.get('/daily-work-status/vehicles-for-entry', { params }),
+  saveDailyWorkStatus: (data) => api.post('/daily-work-status', data),
+  confirmWorkStatus: (id, data) => api.put(`/daily-work-status/${id}/confirm`, data),
+  getStatistics: (params = {}) => api.get('/daily-work-status/statistics', { params }),
+  getDistrictSummary: (params = {}) => api.get('/daily-work-status/district-summary', { params }),
 };
 
 export default api;

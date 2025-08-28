@@ -73,12 +73,12 @@ router.get('/', authenticate, requirePermission(PERMISSIONS.VIEW_DAILY_WORK), as
         {
           model: User,
           as: 'operator',
-          attributes: ['id', 'username', 'full_name']
+          attributes: ['id', 'username', 'first_name', 'last_name']
         },
         {
           model: User,
           as: 'confirmer',
-          attributes: ['id', 'username', 'full_name']
+          attributes: ['id', 'username', 'first_name', 'last_name']
         }
       ],
       order: [['date', 'DESC'], [{ model: Vehicle, as: 'vehicle' }, 'plate_number', 'ASC']]
@@ -247,7 +247,7 @@ router.post('/', authenticate, async (req, res) => {
         {
           model: User,
           as: 'operator',
-          attributes: ['id', 'username', 'full_name']
+          attributes: ['id', 'username', 'first_name', 'last_name']
         }
       ]
     });
@@ -416,8 +416,152 @@ router.get('/statistics', authenticate, async (req, res) => {
   }
 });
 
+// Tasdiqlangan yozuvlar jurnali (Journal of confirmed entries)
+router.get('/confirmed-journal', authenticate, async (req, res) => {
+  try {
+    const { start_date, end_date, district_id, work_status, vehicle_id } = req.query;
+    const user = req.user;
+
+    let whereClause = { status: 'confirmed' };
+    
+    if (start_date && end_date) {
+      whereClause.date = {
+        [Op.between]: [start_date, end_date]
+      };
+    }
+    
+    if (work_status) {
+      whereClause.work_status = work_status;
+    }
+    
+    if (vehicle_id) {
+      whereClause.vehicle_id = vehicle_id;
+    }
+
+    // Ruxsatlar asosida filtering
+    let vehicleWhere = {};
+    vehicleWhere = applyDataFiltering(user, vehicleWhere);
+    
+    if (district_id && user.role.name === 'super_admin') {
+      vehicleWhere.district_id = district_id;
+    }
+
+    const confirmedEntries = await VehicleWorkStatus.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: Vehicle,
+          as: 'vehicle',
+          where: vehicleWhere,
+          include: [
+            {
+              model: District,
+              as: 'district',
+              attributes: ['id', 'name']
+            },
+            {
+              model: Company,
+              as: 'company',
+              attributes: ['id', 'name']
+            }
+          ]
+        },
+        {
+          model: WorkStatusReason,
+          as: 'reason',
+          attributes: ['id', 'name', 'category', 'severity']
+        },
+        {
+          model: User,
+          as: 'operator',
+          attributes: ['id', 'username', 'first_name', 'last_name']
+        },
+        {
+          model: User,
+          as: 'confirmer',
+          attributes: ['id', 'username', 'first_name', 'last_name']
+        }
+      ],
+      order: [['confirmed_at', 'DESC'], ['date', 'DESC']]
+    });
+
+    // Yeg'indi jadval uchun ma'lumotlarni guruhlash
+    const pivotData = {};
+    
+    confirmedEntries.forEach(entry => {
+      const district = entry.vehicle.district?.name || 'Noma\'lum tuman';
+      const company = entry.vehicle.company?.name || 'Noma\'lum korxona';
+      const vehicleType = entry.vehicle.vehicle_type || 'other';
+      const workStatus = entry.work_status;
+      const reason = entry.reason?.name || null;
+      const date = moment(entry.date).format('YYYY-MM');
+      
+      // District bo'yicha guruhlash
+      if (!pivotData[district]) {
+        pivotData[district] = {
+          total: 0,
+          working: 0,
+          not_working: 0,
+          vehicles: new Set(),
+          reasons: {},
+          companies: {},
+          monthly: {}
+        };
+      }
+      
+      pivotData[district].total += 1;
+      pivotData[district].vehicles.add(entry.vehicle.plate_number);
+      
+      if (workStatus === 'working') {
+        pivotData[district].working += 1;
+      } else {
+        pivotData[district].not_working += 1;
+        if (reason) {
+          pivotData[district].reasons[reason] = (pivotData[district].reasons[reason] || 0) + 1;
+        }
+      }
+      
+      // Company bo'yicha
+      if (!pivotData[district].companies[company]) {
+        pivotData[district].companies[company] = { working: 0, not_working: 0 };
+      }
+      pivotData[district].companies[company][workStatus] += 1;
+      
+      // Oylik ma'lumotlar
+      if (!pivotData[district].monthly[date]) {
+        pivotData[district].monthly[date] = { working: 0, not_working: 0 };
+      }
+      pivotData[district].monthly[date][workStatus] += 1;
+    });
+
+    // Set larni array ga aylantirish
+    Object.keys(pivotData).forEach(district => {
+      pivotData[district].unique_vehicles = Array.from(pivotData[district].vehicles);
+      pivotData[district].vehicles_count = pivotData[district].vehicles.size;
+      delete pivotData[district].vehicles;
+    });
+
+    res.json({
+      success: true,
+      data: {
+        journal: confirmedEntries,
+        pivot_data: pivotData,
+        total_entries: confirmedEntries.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching confirmed journal:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Tasdiqlangan yozuvlar jurnalini olishda xatolik',
+      error: error.message
+    });
+  }
+});
+
 // Tumanlar bo'yicha xulosani olish
-router.get('/district-summary', authenticate, async (req, res) => {
+router.get('/district-summary', authenticate, requirePermission(PERMISSIONS.VIEW_DAILY_WORK), async (req, res) => {
   try {
     const { date, company_id } = req.query;
     const user = req.user;
@@ -466,6 +610,11 @@ router.get('/district-summary', authenticate, async (req, res) => {
               attributes: ['id', 'name']
             }
           ]
+        },
+        {
+          model: WorkStatusReason,
+          as: 'reason',
+          attributes: ['id', 'name', 'category', 'severity']
         }
       ]
     });
@@ -501,17 +650,58 @@ router.get('/district-summary', authenticate, async (req, res) => {
           districtMap[districtId].working += 1;
         } else if (status.work_status === 'not_working') {
           districtMap[districtId].not_working += 1;
+          
+          // Ishlamagan texnikalar ro'yxati
+          if (!districtMap[districtId].not_working_vehicles) {
+            districtMap[districtId].not_working_vehicles = [];
+          }
+          
+          const reasonName = status.reason && status.reason.name ? status.reason.name : 'Aniq sabab ko\'rsatilmagan';
+          const reasonCategory = status.reason && status.reason.category ? status.reason.category : 'other';
+          
+          districtMap[districtId].not_working_vehicles.push({
+            plate_number: status.vehicle.plate_number,
+            reason: reasonName,
+            reason_category: reasonCategory,
+            reason_details: status.reason_details || null,
+            vehicle_type: status.vehicle.vehicle_type || 'Noma\'lum'
+          });
+          
+          // Ishlamaslik sabablarini yig'ish (statistika uchun)
+          if (!districtMap[districtId].reasons) {
+            districtMap[districtId].reasons = {};
+          }
+          
+          const reasonKey = `${reasonCategory}_${reasonName}`;
+          if (!districtMap[districtId].reasons[reasonKey]) {
+            districtMap[districtId].reasons[reasonKey] = {
+              name: reasonName,
+              category: reasonCategory,
+              count: 0
+            };
+          }
+          districtMap[districtId].reasons[reasonKey].count += 1;
         }
       }
     });
 
-    // Foizlarni hisoblash
+    // Foizlarni hisoblash va sabablarni formatlash
     Object.values(districtMap).forEach(district => {
       const totalWithData = district.working + district.not_working;
       if (totalWithData > 0) {
         district.working_percentage = Math.round((district.working / totalWithData) * 100);
       } else {
         district.working_percentage = 0;
+      }
+      
+      // Sabablarni massivga aylantirish va saralash
+      if (district.reasons) {
+        district.reasons_list = Object.values(district.reasons)
+          .sort((a, b) => b.count - a.count) // Ko'p bo'lgan sabablar birinchi
+          .slice(0, 5); // Faqat birinchi 5 ta sabab
+        delete district.reasons; // Obyektni o'chirish
+      } else {
+        district.reasons_list = [];
       }
     });
 
