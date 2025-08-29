@@ -111,3 +111,8 @@ echo 👋 Xayr! Tizimdan chiqish...
 exit
 
 
+
+
+
+
+

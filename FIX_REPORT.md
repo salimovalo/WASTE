@@ -131,3 +131,8 @@ Agar muammo davom etsa:
 **Barcha asosiy muammolar hal qilindi! Tizim to'liq ishga tayyor! ✅**
 
 
+
+
+
+
+

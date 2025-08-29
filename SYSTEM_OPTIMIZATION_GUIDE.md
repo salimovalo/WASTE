@@ -265,3 +265,8 @@ Tizim to'liq ishga tayyor va optimallashtirilgan. Yuqoridagi tavsiyalarni bosqic
 *Oxirgi yangilanish: 2024-yil 26-avgust*
 
 
+
+
+
+
+

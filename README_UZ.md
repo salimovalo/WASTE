@@ -123,3 +123,8 @@ Muammo yoki savol bo'lsa, administrator bilan bog'laning.
 © 2024 Chiqindilarni Boshqarish Tizimi
 
 
+
+
+
+
+

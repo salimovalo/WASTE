@@ -143,6 +143,11 @@ const getMenuItems = (user) => {
         key: '/data-entry/206-report',
         icon: <FileTextOutlined />,
         label: '206 Xisoboti',
+      },
+      {
+        key: '/data-entry/polygons',
+        icon: <BarChartOutlined />,
+        label: 'Poligonlar bo\'limi',
       }
     ]
   });
@@ -228,6 +233,7 @@ const breadcrumbNameMap = {
   '/vehicles/fuel': 'Yoqilg\'i',
   '/data-entry': 'Ma\'lumotlar kiritish',
   '/data-entry/206-report': '206 Xisoboti',
+  '/data-entry/polygons': 'Poligonlar bo\'limi',
   '/vehicles/data-entry': 'Ma\'lumotlar kiritish',
   '/vehicles/historical': 'Tarixiy ma\'lumotlar',
   '/service-quality': 'Xizmat sifati',

@@ -27,3 +27,8 @@ echo Chiqish uchun istalgan tugmani bosing...
 pause >nul
 
 
+
+
+
+
+

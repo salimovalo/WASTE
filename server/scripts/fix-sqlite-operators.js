@@ -41,3 +41,8 @@ console.log(`\n📊 Total: ${fixedCount} files fixed`);
 console.log('✅ SQLite compatibility fix completed!');
 
 
+
+
+
+
+

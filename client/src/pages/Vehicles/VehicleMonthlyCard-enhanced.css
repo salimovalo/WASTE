@@ -1,4 +1,29 @@
-/* Enhanced Vehicle Monthly Card - Zamonaviy dizayn */
+/* Enhanced Vehicle Monthly Card - Fullscreen dizayn */
+
+/* Fullscreen container */
+.vehicle-monthly-card-fullscreen {
+  margin: -24px !important;
+  padding: 0 !important;
+  min-height: 100vh !important;
+  background-color: #f5f5f5 !important;
+}
+
+/* Professional Header Card */
+.header-card {
+  border: none !important;
+  margin: 0 0 8px 0 !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+}
+
+.header-card .ant-card-body {
+  padding: 16px 20px !important;
+}
+
+/* Header card typography */
+.header-card .ant-typography {
+  color: white !important;
+}
 
 /* Auto-save indicator */
 .auto-save-indicator {
@@ -80,19 +105,20 @@
   animation: dragPulse 1s ease-in-out infinite;
 }
 
-/* Progress tracking */
+/* Progress tracking - Modern Professional */
 .progress-tracker {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.9);
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
   border-radius: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid #ecf0f1;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 2px 12px rgba(44, 62, 80, 0.06);
 }
 
 .progress-tracker::before {
@@ -102,39 +128,40 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
-  animation: progressShimmer 2s ease-in-out infinite;
+  background: linear-gradient(90deg, #2c3e50, #34495e, #95a5a6);
+  animation: progressShimmer 3s ease-in-out infinite;
 }
 
 .progress-step {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 10px;
+  padding: 12px 16px;
   border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
   position: relative;
+  border: 2px solid transparent;
 }
 
 .progress-step.completed {
-  background: rgba(16, 185, 129, 0.1);
-  color: #059669;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: linear-gradient(135deg, #d5f4e6 0%, #a8e6cf 100%);
+  color: #27ae60;
+  border-color: #82c341;
 }
 
 .progress-step.current {
-  background: rgba(102, 126, 234, 0.1);
-  color: #4f46e5;
-  border: 1px solid rgba(102, 126, 234, 0.2);
+  background: linear-gradient(135deg, #ecf0f1 0%, #d5dbdb 100%);
+  color: #2c3e50;
+  border-color: #34495e;
   animation: currentStepPulse 2s ease-in-out infinite;
 }
 
 .progress-step.pending {
-  background: rgba(148, 163, 184, 0.1);
-  color: #64748b;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: linear-gradient(135deg, #f8f9fa 0%, #ecf0f1 100%);
+  color: #7f8c8d;
+  border-color: #bdc3c7;
 }
 
 /* Enhanced cell editing */
@@ -342,6 +369,215 @@
   }
 }
 
+/* Night shift row styling */
+.night-shift-row {
+  background-color: #f0f0ff !important;
+  border-left: 4px solid #8b45c4 !important;
+  position: relative;
+}
+
+.night-shift-row:hover {
+  background-color: #e6e6ff !important;
+}
+
+.night-shift-row td {
+  border-color: #d9d9ff !important;
+  position: relative;
+  vertical-align: middle !important;
+  text-align: center !important;
+}
+
+.night-shift-row .editable-cell {
+  background-color: #f8f8ff !important;
+  border-color: #d9d9ff !important;
+  margin: 0 !important;
+  padding: 4px !important;
+}
+
+.night-shift-row .ant-table-cell {
+  background-color: #f0f0ff !important;
+  padding: 4px 8px !important;
+}
+
+/* Fix night shift cell alignment - Normal padding without offset */
+.night-shift-row .ant-table-cell:first-child {
+  position: relative;
+  padding-left: 8px !important;
+}
+
+/* Table layout improvements - Fullscreen */
+.vehicle-monthly-card-fullscreen .ant-card {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+}
+
+.vehicle-monthly-card-fullscreen .ant-card .ant-card-body {
+  padding: 8px 20px !important;
+}
+
+.monthly-table {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+
+.monthly-table .ant-table {
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+.monthly-table .ant-table-container {
+  border-radius: 0 !important;
+}
+
+.monthly-table .ant-table-thead > tr > th {
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 8px 4px !important;
+  font-weight: 600 !important;
+  background: #2c3e50 !important;
+  color: white !important;
+  border-color: #34495e !important;
+  font-size: 12px !important;
+}
+
+/* All headers with uniform dark color */
+.monthly-table .ant-table-thead > tr > th {
+  background: #2c3e50 !important;
+}
+
+.monthly-table .ant-table-thead > tr > th.ant-table-cell-with-append {
+  background: #2c3e50 !important;
+}
+
+/* Sub headers for grouped columns */
+.monthly-table .ant-table-thead th:not(:first-child) {
+  border-left: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Uniform header styling for all columns */
+.monthly-table .ant-table-thead > tr:first-child > th,
+.monthly-table .ant-table-thead > tr:last-child > th {
+  background: #2c3e50 !important;
+}
+
+/* Hover effect for headers */
+.monthly-table .ant-table-thead > tr > th:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+  transition: all 0.3s ease !important;
+}
+
+/* Header text shadow for better readability */
+.monthly-table .ant-table-thead > tr > th {
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Fix border radius for headers */
+.monthly-table .ant-table-thead > tr > th:first-child {
+  border-top-left-radius: 8px !important;
+}
+
+.monthly-table .ant-table-thead > tr > th:last-child {
+  border-top-right-radius: 8px !important;
+}
+
+/* Improve table overall appearance */
+.monthly-table .ant-table {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.monthly-table .ant-table-tbody > tr > td {
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 4px !important;
+}
+
+/* Night shift specific table fixes */
+.night-shift-row .ant-table-tbody > tr > td {
+  background-color: #f0f0ff !important;
+  border-color: #d9d9ff !important;
+}
+
+/* Improve cell alignment for all rows */
+.ant-table-cell {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Date column specific styling */
+.monthly-table .ant-table-tbody > tr > td:first-child {
+  position: relative !important;
+  padding-left: 8px !important;
+}
+
+/* Custom dark DatePicker styling */
+.custom-dark-datepicker .ant-picker {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: white !important;
+}
+
+.custom-dark-datepicker .ant-picker-input input {
+  background: transparent !important;
+  color: white !important;
+}
+
+.custom-dark-datepicker .ant-picker-suffix {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.custom-dark-datepicker .ant-picker:hover {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.custom-dark-datepicker .ant-picker-focused {
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Weekend row styling */
+.weekend-row {
+  background-color: #fff7e6 !important;
+  border-left: 3px solid #fa8c16 !important;
+}
+
+.weekend-row:hover {
+  background-color: #fff1b8 !important;
+}
+
+/* Today row styling */
+.today-row {
+  background-color: #e6f7ff !important;
+  border-left: 3px solid #1890ff !important;
+}
+
+.today-row:hover {
+  background-color: #bae7ff !important;
+}
+
+/* Error row styling */
+.error-row {
+  background-color: #fff2f0 !important;
+  border-left: 3px solid #ff4d4f !important;
+}
+
+.error-row:hover {
+  background-color: #ffccc7 !important;
+}
+
+/* Completed day styling - checkmark removed */
+.completed-day {
+  position: relative;
+}
+
+/* Removed checkmark icon for cleaner look */
+
 /* Mobile optimizations */
 @media (max-width: 768px) {
   .auto-save-indicator {
@@ -366,5 +602,10 @@
   
   .context-menu {
     min-width: 140px;
+  }
+  
+  .night-shift-row::before {
+    left: 4px;
+    font-size: 12px;
   }
 }

@@ -6,6 +6,7 @@ import TripSheetTable from '../Vehicles/TripSheetTable';
 import TripSheetFormPage from '../Vehicles/TripSheetFormPage';
 import TripSheetView from '../Vehicles/TripSheetView';
 import VehicleMonthlyCard from '../Vehicles/VehicleMonthlyCard';
+import Polygons from '../Polygons/Polygons';
 
 const DataEntry = () => {
   return (
@@ -15,6 +16,7 @@ const DataEntry = () => {
       <Route path="/trip-sheet-form" element={<TripSheetFormPage />} />
       <Route path="/trip-sheet-view/:id" element={<TripSheetView />} />
       <Route path="/vehicle-card/:vehicleId" element={<VehicleMonthlyCard />} />
+      <Route path="/polygons" element={<Polygons />} />
     </Routes>
   );
 };
