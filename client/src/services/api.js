@@ -5,10 +5,11 @@ import axios from 'axios';
 // Create axios instance with base configuration
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api',
-  timeout: 10000,
+  timeout: 30000, // Increased timeout for large operations
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: false, // CORS uchun
 });
 
 // Request interceptor to add auth token
@@ -31,12 +32,40 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+    // Network error handling
+    if (!error.response) {
+      console.error('Network error:', error.message);
+      return Promise.reject({
+        message: 'Tarmoq xatoligi. Internetga ulanishni tekshiring.',
+        type: 'network_error'
+      });
     }
+
+    // Handle different error codes
+    switch (error.response?.status) {
+      case 401:
+        // Token expired or invalid
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('auth-storage');
+        window.location.href = '/login';
+        break;
+      case 403:
+        console.error('Access forbidden:', error.response.data);
+        break;
+      case 404:
+        console.error('Resource not found:', error.response.data);
+        break;
+      case 429:
+        console.error('Too many requests:', error.response.data);
+        break;
+      case 500:
+        console.error('Server error:', error.response.data);
+        break;
+      default:
+        console.error('API error:', error.response.data);
+    }
+    
     return Promise.reject(error);
   }
 );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Card, 
   Table, 
@@ -26,6 +26,7 @@ import {
   Switch,
   Badge
 } from 'antd';
+import { DEFAULTS } from '../../constants';
 import { 
   ArrowLeftOutlined,
   PrinterOutlined,
@@ -79,9 +80,9 @@ const VehicleMonthlyCard = () => {
   const [selectedCells, setSelectedCells] = useState([]);
   const [contextMenu, setContextMenu] = useState(null);
   const [batchOperations, setBatchOperations] = useState(false);
-  const [monthStartOdometer, setMonthStartOdometer] = useState(10000);
-  const [monthStartSpeedometer, setMonthStartSpeedometer] = useState(10000);
-  const [monthStartFuel, setMonthStartFuel] = useState(50);
+  const [monthStartOdometer, setMonthStartOdometer] = useState(DEFAULTS.ODOMETER_START);
+  const [monthStartSpeedometer, setMonthStartSpeedometer] = useState(DEFAULTS.SPEEDOMETER_START);
+  const [monthStartFuel, setMonthStartFuel] = useState(DEFAULTS.FUEL_START);
   const [polygonList, setPolygonList] = useState([]);
   const [columnWidths, setColumnWidths] = useState({});
   const [resizingColumn, setResizingColumn] = useState(null);
@@ -93,9 +94,24 @@ const VehicleMonthlyCard = () => {
   const [selectedVolumeRecord, setSelectedVolumeRecord] = useState(null);
   const [fuelModalVisible, setFuelModalVisible] = useState(false);
   const [selectedFuelRecord, setSelectedFuelRecord] = useState(null);
+  const [weatherImpactEnabled, setWeatherImpactEnabled] = useState(true);
+  const [tripsModalVisible, setTripsModalVisible] = useState(false);
+  const [selectedTripsRecord, setSelectedTripsRecord] = useState(null);
+  const [tempTripsCount, setTempTripsCount] = useState(0);
+  const [tempPolygons, setTempPolygons] = useState([]);
+  const tableOuterRef = useRef(null);
+  const tableInnerRef = useRef(null);
+  const [tableScale, setTableScale] = useState(1);
+  const [dailySaveStatus, setDailySaveStatus] = useState({});
+  const [savingDay, setSavingDay] = useState(null);
   
   const { user } = useAuthStore();
   const { selectedDate } = useDateStore();
+
+  // Helper function to get fuel unit based on fuel type
+  const getFuelUnit = () => {
+    return vehicle?.fuel_type?.toUpperCase() === 'GAS' ? 'm³' : 'L';
+  };
 
   useEffect(() => {
     if (vehicleId) {
@@ -104,6 +120,27 @@ const VehicleMonthlyCard = () => {
       loadMasterData();
     }
   }, [vehicleId, selectedMonth]);
+  
+  // Kunlik saqlash holatini boshlang'ich qiymatlar bilan to'ldirish
+  useEffect(() => {
+    if (selectedMonth) {
+      const daysInMonth = selectedMonth.daysInMonth();
+      const initialStatus = {};
+      
+      // Agar dailySaveStatus bo'sh bo'lsa yoki oy o'zgargan bo'lsa
+      if (Object.keys(dailySaveStatus).length === 0 || Object.keys(dailySaveStatus).length !== daysInMonth) {
+        for (let day = 1; day <= daysInMonth; day++) {
+          initialStatus[day] = {
+            saved: false,
+            status: 'not_saved',
+            canSave: day === 1 // Faqat 1-kunni saqlash mumkin
+          };
+        }
+        
+        setDailySaveStatus(initialStatus);
+      }
+    }
+  }, [selectedMonth]);
 
   // Auto-save functionality
   useEffect(() => {
@@ -151,17 +188,37 @@ const VehicleMonthlyCard = () => {
   useEffect(() => {
     if (monthlyData.length > 0 && monthStartFuel !== null && monthStartFuel !== undefined) {
       const firstDay = monthlyData.find(item => item.key === 1);
-      if (firstDay && firstDay.fuel_start !== monthStartFuel) {
-        const newData = monthlyData.map(item => 
-          item.key === 1 
-            ? { ...item, fuel_start: monthStartFuel, calculated_fuel_start: monthStartFuel }
-            : item
-        );
-        setMonthlyData(newData);
+      if (firstDay && firstDay.fuel_remaining_start !== monthStartFuel) {
+        // Yoqilg'i mantiqini qayta hisoblash
+        // setTimeout(() => recalculateFuelLogic(), 100);
         setHasUnsavedChanges(true);
       }
     }
   }, [monthStartFuel, monthlyData.length]);
+
+  // Auto fit table to screen width (no horizontal scroll)
+  useEffect(() => {
+    const resizeToFit = () => {
+      try {
+        if (!tableOuterRef.current || !tableInnerRef.current) return;
+        const outerWidth = tableOuterRef.current.clientWidth;
+        // Measure natural table width before scaling
+        const innerWidth = tableInnerRef.current.scrollWidth / tableScale; // undo previous scale
+        if (outerWidth && innerWidth) {
+          const nextScale = Math.min(1, outerWidth / innerWidth);
+          if (Math.abs(nextScale - tableScale) > 0.01) {
+            setTableScale(nextScale);
+          }
+        }
+      } catch (e) {
+        // ignore sizing errors
+      }
+    };
+
+    resizeToFit();
+    window.addEventListener('resize', resizeToFit);
+    return () => window.removeEventListener('resize', resizeToFit);
+  }, [monthlyData, columnWidths, tableScale]);
 
   const loadVehicleData = async () => {
     try {
@@ -234,14 +291,24 @@ const VehicleMonthlyCard = () => {
         const polygonRes = await api.get('/polygons', {
           params: { limit: 50, is_active: true }
         });
-        setPolygonList(polygonRes.data.polygons || polygonRes.data || [
-          { id: 'oxangar', name: 'Oxangar poligoni' },
-          { id: 'tashkent_poligon', name: 'Toshkent poligoni' },
-          { id: 'nukus_poligon', name: 'Nukus poligoni' },
-          { id: 'samarkand_poligon', name: 'Samarqand poligoni' },
-          { id: 'bukhara_poligon', name: 'Buxoro poligoni' }
-        ]);
+        const polygons = polygonRes.data.polygons || polygonRes.data || [];
+        // Ensure all polygons have required fields
+        const validPolygons = Array.isArray(polygons) ? polygons.filter(p => p && (p.id || p.name)) : [];
+        
+        if (validPolygons.length === 0) {
+          // Use default polygons if no valid ones found
+          setPolygonList([
+            { id: 'oxangar', name: 'Oxangar poligoni' },
+            { id: 'tashkent_poligon', name: 'Toshkent poligoni' },
+            { id: 'nukus_poligon', name: 'Nukus poligoni' },
+            { id: 'samarkand_poligon', name: 'Samarqand poligoni' },
+            { id: 'bukhara_poligon', name: 'Buxoro poligoni' }
+          ]);
+        } else {
+          setPolygonList(validPolygons);
+        }
       } catch (polygonError) {
+        console.warn('Polygons API failed, using defaults:', polygonError);
         // Default polygons if API fails
         setPolygonList([
           { id: 'oxangar', name: 'Oxangar poligoni' },
@@ -303,7 +370,7 @@ const VehicleMonthlyCard = () => {
           // Machine hours
           machine_hours: 0,
           
-          // Poligon safarlari va destinatsiyalar
+          // Poligon safarlari va obligatsiyalar
           waste_tbo_trips: 0,
           polygon_1: '',
           polygon_2: '',
@@ -355,7 +422,24 @@ const VehicleMonthlyCard = () => {
         });
         
         // Merge with actual data if available
-        const actualData = response.data || [];
+        const actualData = (response.data && response.data.success) ? response.data.data : response.data || [];
+        
+        // Kunlik saqlash holatini olish
+        if (response.data && response.data.dailySaveStatus) {
+          setDailySaveStatus(response.data.dailySaveStatus);
+        }
+        
+        // Debug: Check loaded polygon data
+        console.log('Loaded data from backend:', actualData.map(d => ({
+          date: d.date,
+          trips: d.total_trips,
+          polygon_1: d.polygon_1,
+          polygon_2: d.polygon_2,
+          polygon_3: d.polygon_3,
+          polygon_4: d.polygon_4,
+          polygon_5: d.polygon_5
+        })));
+        
         actualData.forEach(actual => {
           const day = moment(actual.date).date();
           const entry = monthlyEntries.find(e => e.key === day);
@@ -389,7 +473,8 @@ const VehicleMonthlyCard = () => {
           }
         });
       } catch (apiError) {
-        console.log('No monthly data found, using defaults');
+        console.warn('Monthly data API failed, using defaults:', apiError);
+        // Continue with default data
       }
       
       // Load weather data for all entries
@@ -416,6 +501,9 @@ const VehicleMonthlyCard = () => {
       });
       
       setMonthlyData(entriesWithSpeedometer);
+      
+      // Yoqilg'i mantiqini keyinroq qayta hisoblash
+      // setTimeout(() => recalculateFuelLogic(), 200);
       
     } catch (error) {
       console.error('Oylik ma\'lumotlarni yuklashda xatolik:', error);
@@ -471,6 +559,40 @@ const VehicleMonthlyCard = () => {
                     calculated_start: chiqish + km,
                     speedometer_start: chiqish + km, 
                     calculated_speedometer_start: chiqish + km 
+                  }
+                : item
+            );
+            setMonthlyData(newMonthlyData);
+          }
+        }
+        
+        // Qatnov soni o'zgarsa hajmni qayta hisoblash
+        if (field === 'waste_tbo_trips') {
+          const trips = value || 0;
+          const vehicleCapacity = vehicle?.capacity || 7;
+          const calculatedVolume = trips * vehicleCapacity;
+          updatedShiftData.waste_volume_calculated = calculatedVolume;
+          updatedShiftData.waste_volume_m3 = calculatedVolume;
+        }
+        
+        // Yoqilg'i olindi o'zgarsa
+        if (field === 'fuel_taken') {
+          // Tungi smena yoqilg'i qoldiq oxirini qayta hisoblash
+          const nightFuelStart = updatedShiftData.fuel_remaining_start || 0;
+          const nightFuelTaken = value || 0;
+          const nightFuelNorm = calculateFuelNorm(updatedShiftData);
+          updatedShiftData.fuel_remaining_end = Math.max(0, nightFuelStart + nightFuelTaken - nightFuelNorm);
+          
+          // Keyingi kun yoqilg'i qoldiq boshini yangilash
+          const afterDay = shift.afterDay;
+          const nextDayRecord = monthlyData.find(item => item.key === afterDay + 1);
+          if (nextDayRecord) {
+            const newMonthlyData = monthlyData.map(item => 
+              item.key === afterDay + 1 
+                ? { 
+                    ...item, 
+                    fuel_remaining_start: updatedShiftData.fuel_remaining_end,
+                    calculated_fuel_start: updatedShiftData.fuel_remaining_end
                   }
                 : item
             );
@@ -618,6 +740,69 @@ const VehicleMonthlyCard = () => {
     }
   };
 
+  // Yoqilg'i normasini hisoblash funksiyasi
+  const calculateFuelNorm = useCallback((record) => {
+    const dailyKm = Math.max(0, (record.odometer_end || 0) - (record.odometer_start || 0));
+    const trips = record.waste_tbo_trips || 0;
+    const vehicleNormPer100km = vehicle?.fuel_consumption_per_100km || 27;
+    const tripFuelNorm = vehicle?.trip_consumption || 2;
+    
+    // Base calculation
+    const kmNorm = (dailyKm / 100) * vehicleNormPer100km;
+    const tripNorm = trips * tripFuelNorm;
+    let totalNorm = kmNorm + tripNorm;
+    
+    // Weather adjustment: +5% if temperature below 0°C (only if enabled)
+    const temp = record.weather_temp;
+    if (weatherImpactEnabled && temp !== null && temp < 0) {
+      totalNorm += totalNorm * 0.05; // 5% increase for cold weather
+    }
+    
+    return totalNorm;
+  }, [vehicle, weatherImpactEnabled]);
+
+  // Yoqilg'i mantiqini qayta hisoblash funksiyasi
+  const recalculateFuelLogic = useCallback(() => {
+    // Faqat ma'lumotlar mavjud bo'lganda ishlash
+    if (monthlyData.length === 0) return;
+    
+    const newData = [...monthlyData];
+    
+    // Barcha kunlarni ketma-ket hisoblash
+    for (let dayIndex = 0; dayIndex < newData.length; dayIndex++) {
+      const currentDay = newData[dayIndex];
+      
+      if (currentDay.key === 1) {
+        // 1-kun: qoldiq boshi = oy boshi yoqilg'i
+        currentDay.fuel_remaining_start = monthStartFuel || 50;
+        currentDay.calculated_fuel_start = monthStartFuel || 50;
+      } else {
+        // 2-kundan boshlab: qoldiq boshi = oldingi kun qoldiq oxiri
+        const previousDay = newData[dayIndex - 1];
+        if (previousDay) {
+          const prevFuelStart = previousDay.fuel_remaining_start || 0;
+          const prevFuelTaken = previousDay.fuel_taken || 0;
+          const prevFuelNorm = calculateFuelNorm(previousDay);
+          const prevFuelEnd = Math.max(0, prevFuelStart + prevFuelTaken - prevFuelNorm);
+          
+          currentDay.fuel_remaining_start = prevFuelEnd;
+          currentDay.calculated_fuel_start = prevFuelEnd;
+        }
+      }
+      
+      // Qoldiq oxirini hisoblash: qoldiq boshi + olindi - norma sarfi
+      const fuelStart = currentDay.fuel_remaining_start || 0;
+      const fuelTaken = currentDay.fuel_taken || 0;
+      const fuelNorm = calculateFuelNorm(currentDay);
+      
+      currentDay.fuel_remaining_end = Math.max(0, fuelStart + fuelTaken - fuelNorm);
+    }
+    
+    setMonthlyData(newData);
+  }, [monthlyData, monthStartFuel, calculateFuelNorm]);
+
+
+
   const calculateDerivedValues = (record, changedField) => {
     // KM o'zgartirilganda qaytishni hisoblash va keyingi kun chiqishini yangilash
     if (changedField === 'daily_km_manual') {
@@ -625,7 +810,8 @@ const VehicleMonthlyCard = () => {
       const km = record.daily_km_manual || 0;
       record.odometer_end = chiqish + km;
       
-
+      // Yoqilg'i mantiqini qayta hisoblash
+      // setTimeout(() => recalculateFuelLogic(), 100);
     }
     
     // Chiqish o'zgartirilganda faqat qaytishni qayta hisoblash
@@ -654,6 +840,11 @@ const VehicleMonthlyCard = () => {
       record.waste_volume_m3 = manualVolume > 0 ? manualVolume : calculatedVolume;
     }
     
+    // Yoqilg'i olindi o'zgartirilganda qayta hisoblash
+    // if (changedField === 'fuel_taken' || changedField === 'waste_tbo_trips') {
+    //   setTimeout(() => recalculateFuelLogic(), 100);
+    // }
+    
     // Calculate total fuel
     if (changedField === 'fuel_volume_plan' || changedField === 'fuel_volume_other') {
       record.fuel_volume_total = (record.fuel_volume_plan || 0) + (record.fuel_volume_other || 0);
@@ -673,9 +864,99 @@ const VehicleMonthlyCard = () => {
 
   };
 
+  // Kunlik saqlash funksiyasi
+  const handleDailySave = useCallback(async (dayNumber) => {
+    try {
+      setSavingDay(dayNumber);
+      
+      // Kun ma'lumotlarini topish
+      const dayData = monthlyData.find(item => item.key === dayNumber);
+      if (!dayData) {
+        message.error('Kun ma\'lumotlari topilmadi');
+        return;
+      }
+      
+      // Ma'lumotlar to'liqligini tekshirish
+      if (!dayData.driver_id) {
+        message.error('Haydovchi tanlanmagan');
+        return;
+      }
+      
+      if (!dayData.trip_number && (dayData.odometer_start > 0 || dayData.waste_tbo_trips > 0)) {
+        message.error('Yo\'l varaqasi raqami kiritilmagan');
+        return;
+      }
+      
+      // Kun sanasini hisoblash
+      const dayDate = selectedMonth.clone().date(dayNumber).format('YYYY-MM-DD');
+      
+      // API ga yuborish
+      const response = await api.post(`/trip-sheets/daily/${vehicleId}`, {
+        date: dayDate,
+        dayData: {
+          trip_number: dayData.trip_number,
+          driver_id: dayData.driver_id,
+          loader1_id: dayData.loader1_id,
+          loader2_id: dayData.loader2_id,
+          odometer_start: dayData.odometer_start,
+          odometer_end: dayData.odometer_end,
+          machine_hours: dayData.machine_hours,
+          waste_tbo_trips: dayData.waste_tbo_trips,
+          polygon_1: dayData.polygon_1,
+          polygon_2: dayData.polygon_2,
+          polygon_3: dayData.polygon_3,
+          polygon_4: dayData.polygon_4,
+          polygon_5: dayData.polygon_5,
+          waste_volume_m3: dayData.waste_volume_m3,
+          fuel_remaining_start: dayData.fuel_remaining_start,
+          fuel_station_id: dayData.fuel_station_id,
+          fuel_taken: dayData.fuel_taken,
+          fuel_remaining_end: dayData.fuel_remaining_end,
+          notes: dayData.notes
+        }
+      });
+      
+      if (response.data && response.data.success) {
+        message.success(`${dayNumber}-kun ma'lumotlari saqlandi!`);
+        
+        // Kunlik saqlash holatini yangilash
+        const newStatus = { ...dailySaveStatus };
+        newStatus[dayNumber] = {
+          saved: true,
+          status: 'submitted',
+          canSave: false
+        };
+        
+        // Keyingi kunni ochish
+        if (dayNumber < moment(selectedMonth).daysInMonth() && newStatus[dayNumber + 1]) {
+          newStatus[dayNumber + 1].canSave = true;
+        }
+        
+        setDailySaveStatus(newStatus);
+        
+        // Ma'lumotlarni qayta yuklash
+        await loadMonthlyData();
+      } else {
+        throw new Error(response.data?.message || 'Saqlashda xatolik');
+      }
+      
+    } catch (error) {
+      console.error('Kunlik saqlashda xatolik:', error);
+      
+      if (error.response?.data?.type === 'sequence_error') {
+        message.error(error.response.data.message);
+      } else {
+        message.error('Kunlik ma\'lumotlarni saqlashda xatolik yuz berdi');
+      }
+    } finally {
+      setSavingDay(null);
+    }
+  }, [vehicleId, selectedMonth, monthlyData, dailySaveStatus]);
+
   const handleSave = async (silent = false) => {
     try {
       setLoading(true);
+      setSaveStatus('saving');
       
       // Validate all records before saving
       const validRecords = monthlyData.filter(record => {
@@ -689,24 +970,70 @@ const VehicleMonthlyCard = () => {
         if (!silent) {
           message.warning('Ba\'zi yozuvlarda xatoliklar mavjud. Iltimos tekshirib ko\'ring.');
         }
+        setSaveStatus('error');
         return;
       }
       
-      // Save monthly data
-      await api.post(`/trip-sheets/monthly/${vehicleId}`, {
+      // Save monthly data including night shifts
+      const allData = [
+        ...monthlyData,
+        ...nightShifts.map(shift => ({
+          ...shift.data,
+          is_night_shift: true,
+          after_day: shift.afterDay
+        }))
+      ];
+      
+      // Debug: Check polygon data before sending
+      console.log('Saving data with polygons:', allData.map(d => ({
+        date: d.key || d.date,
+        trips: d.waste_tbo_trips,
+        polygon_1: d.polygon_1,
+        polygon_2: d.polygon_2,
+        polygon_3: d.polygon_3,
+        polygon_4: d.polygon_4,
+        polygon_5: d.polygon_5
+      })));
+      
+      const response = await api.post(`/trip-sheets/monthly/${vehicleId}`, {
         month: selectedMonth.format('YYYY-MM'),
-        data: monthlyData
+        data: allData
       });
       
-      setHasUnsavedChanges(false);
-      
-      if (!silent) {
-        message.success('Ma\'lumotlar muvaffaqiyatli saqlandi!');
+              if (response.data && response.data.success) {
+          setHasUnsavedChanges(false);
+          setSaveStatus('saved');
+          
+          // Reload data to get saved polygons
+          await loadMonthlyData();
+          
+          if (!silent) {
+          message.success(response.data.message || 'Ma\'lumotlar muvaffaqiyatli saqlandi!');
+        }
+      } else {
+        throw new Error(response.data?.message || 'Saqlashda xatolik');
       }
     } catch (error) {
       console.error('Save error:', error);
+      setSaveStatus('error');
+      
       if (!silent) {
-        message.error('Saqlashda xatolik: ' + (error.response?.data?.message || error.message));
+        let errorMessage = 'Saqlashda xatolik';
+        
+        if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+          // Show detailed validation errors
+          const errorList = error.response.data.errors.slice(0, 5); // Show first 5 errors
+          errorMessage = `Saqlashda xatolik:\n${errorList.join('\n')}`;
+          if (error.response.data.errors.length > 5) {
+            errorMessage += `\n... va ${error.response.data.errors.length - 5} ta boshqa xatolik`;
+          }
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        message.error(errorMessage);
       }
     } finally {
       setLoading(false);
@@ -1047,8 +1374,22 @@ const VehicleMonthlyCard = () => {
       speedometer_start: (dayRecord.odometer_start + (dayRecord.daily_km_manual || 0)) || dayRecord.odometer_end || 0, 
       speedometer_end: (dayRecord.odometer_start + (dayRecord.daily_km_manual || 0)) || dayRecord.odometer_end || 0,
       calculated_speedometer_start: (dayRecord.odometer_start + (dayRecord.daily_km_manual || 0)) || dayRecord.odometer_end || 0,
-      fuel_start: dayRecord.fuel_end || dayRecord.fuel_start || 0,
-      fuel_end: dayRecord.fuel_end || dayRecord.fuel_start || 0,
+      
+      // Yoqilg'i mantigi: tungi smena qoldiq boshi = kun qoldiq oxiri
+      // Avval kun qoldiq oxirini hisoblash
+      fuel_remaining_start: (() => {
+        const dayFuelStart = dayRecord.fuel_remaining_start || 0;
+        const dayFuelTaken = dayRecord.fuel_taken || 0;
+        const dayFuelNorm = calculateFuelNorm(dayRecord);
+        return Math.max(0, dayFuelStart + dayFuelTaken - dayFuelNorm);
+      })(),
+      fuel_remaining_end: 0,
+      calculated_fuel_start: (() => {
+        const dayFuelStart = dayRecord.fuel_remaining_start || 0;
+        const dayFuelTaken = dayRecord.fuel_taken || 0;
+        const dayFuelNorm = calculateFuelNorm(dayRecord);
+        return Math.max(0, dayFuelStart + dayFuelTaken - dayFuelNorm);
+      })(),
       
       loader1_id: null,
       loader1_name: '',
@@ -1072,8 +1413,7 @@ const VehicleMonthlyCard = () => {
         boshqa: 0
       },
       
-      fuel_remaining_start: dayRecord.fuel_remaining_end || 0,
-      fuel_station: '', fuel_station_id: null, fuel_taken: 0, fuel_remaining_end: 0,
+      fuel_station: '', fuel_station_id: null, fuel_taken: 0,
       fuel_sources: [], // Multiple fuel sources
       
       weather_temp: dayRecord.weather_temp,
@@ -1107,6 +1447,9 @@ const VehicleMonthlyCard = () => {
     
     setHasUnsavedChanges(true);
     message.success(`${afterDay}-${afterDay + 1} kunlar orasiga tungi smena qo'shildi!`);
+    
+    // Yoqilg'i mantiqini qayta hisoblash
+    // setTimeout(() => recalculateFuelLogic(), 100);
   };
   
   const removeNightShift = (afterDay) => {
@@ -1145,20 +1488,265 @@ const VehicleMonthlyCard = () => {
   // Fuel sources modal functions
   const handleFuelSourcesSave = (fuelSources) => {
     const totalFuelTaken = fuelSources.reduce((sum, source) => sum + (source.amount || 0), 0);
-    const newData = monthlyData.map(item => 
-      item.key === selectedFuelRecord.key 
-        ? { 
-            ...item, 
+    
+    // Tungi smena ekanligini tekshirish
+    if (selectedFuelRecord.is_night_shift) {
+      // Tungi smena uchun
+      const updatedNightShifts = nightShifts.map(shift => {
+        if (shift.data.key === selectedFuelRecord.key) {
+          const updatedData = {
+            ...shift.data,
             fuel_sources: fuelSources,
             fuel_taken: totalFuelTaken
-          }
-        : item
-    );
-    setMonthlyData(newData);
+          };
+          
+          // Yoqilg'i qoldiq oxirini qayta hisoblash
+          const nightFuelStart = updatedData.fuel_remaining_start || 0;
+          const nightFuelNorm = calculateFuelNorm(updatedData);
+          updatedData.fuel_remaining_end = Math.max(0, nightFuelStart + totalFuelTaken - nightFuelNorm);
+          
+          return { ...shift, data: updatedData };
+        }
+        return shift;
+      });
+      setNightShifts(updatedNightShifts);
+    } else {
+      // Oddiy kun uchun
+      const newData = monthlyData.map(item => 
+        item.key === selectedFuelRecord.key 
+          ? { 
+              ...item, 
+              fuel_sources: fuelSources,
+              fuel_taken: totalFuelTaken
+            }
+          : item
+      );
+      setMonthlyData(newData);
+    }
+    
     setHasUnsavedChanges(true);
     setFuelModalVisible(false);
     setSelectedFuelRecord(null);
     message.success('Yoqilg\'i ma\'lumotlari saqlandi!');
+  };
+
+  const handleTripsModalOpen = (record) => {
+    console.log('Qatnov modal ochilmoqda:', record);
+    setSelectedTripsRecord(record);
+    setTempTripsCount(record.waste_tbo_trips || 0);
+    
+    // Load existing polygons
+    const existingPolygons = [];
+    for (let i = 1; i <= 5; i++) {
+      const polygonValue = record[`polygon_${i}`];
+      if (polygonValue && typeof polygonValue === 'string' && polygonValue.trim()) {
+        existingPolygons.push(polygonValue);
+      }
+    }
+    setTempPolygons(existingPolygons);
+    setTripsModalVisible(true);
+  };
+
+  const handleTripsSave = () => {
+    if (!selectedTripsRecord) return;
+
+    const updatedRecord = { ...selectedTripsRecord };
+    updatedRecord.waste_tbo_trips = tempTripsCount;
+    
+    // Clear existing polygon fields
+    for (let i = 1; i <= 5; i++) {
+      updatedRecord[`polygon_${i}`] = '';
+    }
+    
+    // Set new polygon data
+    tempPolygons.forEach((polygon, index) => {
+      if (index < 5 && polygon) { // Maximum 5 polygons and must have value
+        // Ensure polygon is a string
+        const polygonValue = typeof polygon === 'string' ? polygon : String(polygon);
+        updatedRecord[`polygon_${index + 1}`] = polygonValue.trim();
+      }
+    });
+
+    // Calculate volume based on trips
+    const vehicleCapacity = vehicle?.capacity || 7;
+    const calculatedVolume = tempTripsCount * vehicleCapacity;
+    updatedRecord.waste_volume_calculated = calculatedVolume;
+    if (!updatedRecord.waste_volume_manual || updatedRecord.waste_volume_manual === 0) {
+      updatedRecord.waste_volume_m3 = calculatedVolume;
+    }
+
+    // Update the data - tungi smena yoki oddiy kun
+    if (selectedTripsRecord.is_night_shift) {
+      // Tungi smena uchun
+      const updatedNightShifts = nightShifts.map(shift => {
+        if (shift.data.key === selectedTripsRecord.key) {
+          return { ...shift, data: updatedRecord };
+        }
+        return shift;
+      });
+      setNightShifts(updatedNightShifts);
+    } else {
+      // Oddiy kun uchun
+      const newData = monthlyData.map(item => 
+        item.key === selectedTripsRecord.key ? updatedRecord : item
+      );
+      setMonthlyData(newData);
+    }
+    
+    setHasUnsavedChanges(true);
+
+    // Close modal
+    setTripsModalVisible(false);
+    setSelectedTripsRecord(null);
+    setTempTripsCount(0);
+    setTempPolygons([]);
+    
+    // Auto-save if enabled
+    if (autoSaveEnabled) {
+      setTimeout(() => {
+        handleSave(true); // Silent save
+      }, 500);
+    } else {
+      message.info('Ma\'lumotlar o\'zgartirildi. "Avto saqlash" yoki "Saqlash" tugmasini bosing.');
+    }
+  };
+
+  const updateTempPolygon = (index, value) => {
+    const newPolygons = [...tempPolygons];
+    // Ensure value is a string or empty
+    newPolygons[index] = value && typeof value === 'string' ? value.trim() : '';
+    setTempPolygons(newPolygons);
+  };
+
+  // Modal component without re-renders
+  const TripsModal = () => {
+    const polygonOptions = (polygonList || []).map(p => ({ 
+      value: p?.id || p?.name || '', 
+      label: p?.name || 'Noma\'lum poligon' 
+    }));
+
+    if (!tripsModalVisible) return null;
+
+    return (
+      <Modal
+        title={`🚛 ${selectedTripsRecord?.date}-kun qatnov ma'lumotlari`}
+        open={true}
+        onCancel={() => {
+          setTripsModalVisible(false);
+          setSelectedTripsRecord(null);
+          setTempTripsCount(0);
+          setTempPolygons([]);
+        }}
+        onOk={handleTripsSave}
+        okText="Saqlash"
+        cancelText="Bekor qilish"
+        width={600}
+        destroyOnHidden={false}
+        maskClosable={false}
+        forceRender={true}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 8, fontWeight: 'bold' }}>
+            📊 Qatnov soni:
+          </div>
+          <InputNumber
+            value={tempTripsCount}
+            onChange={(value) => {
+              const val = value || 0;
+              setTempTripsCount(val);
+              // Adjust polygons array to match trip count
+              if (val > tempPolygons.length) {
+                // Add empty polygons
+                const newPolygons = [...tempPolygons];
+                while (newPolygons.length < val) {
+                  newPolygons.push('');
+                }
+                setTempPolygons(newPolygons);
+              } else if (val < tempPolygons.length) {
+                // Remove excess polygons
+                setTempPolygons(tempPolygons.slice(0, val));
+              }
+            }}
+            min={0}
+            max={10}
+            style={{ width: '100%' }}
+            placeholder="Qatnov sonini kiriting"
+            keyboard={false}
+          />
+        </div>
+
+        {tempTripsCount > 0 && (
+          <div>
+            <div style={{ marginBottom: 8, fontWeight: 'bold' }}>
+              🏭 Poligonlar ({tempTripsCount} ta qatnov):
+            </div>
+            
+            {Array.from({ length: tempTripsCount }, (_, index) => (
+              <div key={index} style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: 8,
+                padding: '8px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '4px',
+                border: '1px solid #e9ecef'
+              }}>
+                <div style={{ 
+                  minWidth: '80px', 
+                  marginRight: '12px',
+                  fontWeight: '600',
+                  color: '#495057'
+                }}>
+                  {index + 1}-qatnov:
+                </div>
+                <Select
+                  value={tempPolygons[index] && typeof tempPolygons[index] === 'string' ? tempPolygons[index] : undefined}
+                  onChange={(value) => updateTempPolygon(index, value || '')}
+                  placeholder="Poligon tanlang"
+                  style={{ flex: 1, marginRight: 8 }}
+                  showSearch
+                  optionFilterProp="label"
+                  allowClear
+                >
+                  {polygonOptions.map(option => (
+                    <Select.Option key={option.value} value={option.value} label={option.label}>
+                      {option.label}
+                    </Select.Option>
+                  ))}
+                </Select>
+                {tempTripsCount > 1 && (
+                  <Button
+                    size="small"
+                    danger
+                    onClick={() => {
+                      const newPolygons = tempPolygons.filter((_, i) => i !== index);
+                      setTempPolygons(newPolygons);
+                      setTempTripsCount(Math.max(0, tempTripsCount - 1));
+                    }}
+                    style={{ minWidth: '32px' }}
+                    title="Bu qatorni o'chirish"
+                  >
+                    🗑️
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ 
+          marginTop: 16, 
+          padding: '8px 12px', 
+          backgroundColor: '#e8f4f8', 
+          borderRadius: '4px',
+          fontSize: '12px',
+          color: '#495057'
+        }}>
+          💡 <strong>Ma'lumot:</strong> Qatnov soni o'zgartirilsa, hajm avtomatik hisoblanadi: 
+          <strong> {tempTripsCount} × {vehicle?.capacity || 7} = {tempTripsCount * (vehicle?.capacity || 7)} m³</strong>
+        </div>
+      </Modal>
+    );
   };
 
   const FuelSourcesModal = () => {
@@ -1216,6 +1804,9 @@ const VehicleMonthlyCard = () => {
         width={400}
         styles={{ body: { padding: '16px' } }}
         className="fuel-sources-modal"
+        destroyOnHidden={false}
+        maskClosable={false}
+        forceRender={true}
       >
         <div>
           {tempFuelSources.map((source, index) => (
@@ -1250,7 +1841,7 @@ const VehicleMonthlyCard = () => {
                 precision={1}
                 size="small"
                 controls={false}
-                addonAfter="L"
+                addonAfter={getFuelUnit()}
                 placeholder="0.0"
               />
               {tempFuelSources.length > 1 && (
@@ -1299,7 +1890,7 @@ const VehicleMonthlyCard = () => {
                 fontWeight: '700', 
                 color: '#2c3e50'
               }}>
-                {totalFuel.toFixed(1)} L
+                {totalFuel.toFixed(1)} {getFuelUnit()}
               </span>
             </div>
           </div>
@@ -1310,12 +1901,32 @@ const VehicleMonthlyCard = () => {
 
   // Volume breakdown modal functions
   const handleVolumeBreakdownSave = (breakdown) => {
-    const newData = monthlyData.map(item => 
-      item.key === selectedVolumeRecord.key 
-        ? { ...item, volume_breakdown: breakdown }
-        : item
-    );
-    setMonthlyData(newData);
+    // Tungi smena ekanligini tekshirish
+    if (selectedVolumeRecord.is_night_shift) {
+      // Tungi smena uchun
+      const updatedNightShifts = nightShifts.map(shift => {
+        if (shift.data.key === selectedVolumeRecord.key) {
+          return { 
+            ...shift, 
+            data: { 
+              ...shift.data, 
+              volume_breakdown: breakdown 
+            } 
+          };
+        }
+        return shift;
+      });
+      setNightShifts(updatedNightShifts);
+    } else {
+      // Oddiy kun uchun
+      const newData = monthlyData.map(item => 
+        item.key === selectedVolumeRecord.key 
+          ? { ...item, volume_breakdown: breakdown }
+          : item
+      );
+      setMonthlyData(newData);
+    }
+    
     setHasUnsavedChanges(true);
     setVolumeModalVisible(false);
     setSelectedVolumeRecord(null);
@@ -1364,6 +1975,9 @@ const VehicleMonthlyCard = () => {
         width={380}
         styles={{ body: { padding: '16px' } }}
         className="volume-breakdown-modal"
+        destroyOnHidden={false}
+        maskClosable={false}
+        forceRender={true}
       >
         <div>
           {[
@@ -1615,32 +2229,11 @@ const VehicleMonthlyCard = () => {
     );
   };
 
-  // Render polygon destination inputs based on trip count
-  const renderPolygonDestinations = (record) => {
-    const tripCount = record.waste_tbo_trips || 0;
-    if (tripCount === 0) return null;
-    
-    const inputs = [];
-    for (let i = 1; i <= tripCount; i++) {
-      inputs.push(
-        <div key={i} style={{ marginBottom: 4 }}>
-          <EditableCell 
-            record={record} 
-            field={`polygon_${i}`} 
-            value={record[`polygon_${i}`] || ''}
-            displayValue={record[`polygon_${i}`] || `Poligon ${i}`}
-            type="select" 
-            options={polygonList}
-          />
-        </div>
-      );
-    }
-    return <div>{inputs}</div>;
-  };
+
 
   const columns = [
     {
-      title: 'Sana',
+      title: <div style={{ textAlign: 'center', fontWeight: 'bold', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>SANA</div>,
       dataIndex: 'date',
       key: 'date',
       width: columnWidths['date'] || 80,
@@ -1676,9 +2269,63 @@ const VehicleMonthlyCard = () => {
           }}>{record.day_name}</div>
           {record.is_today && <Badge status="processing" size="small" />}
           
-          {/* Night shift add/remove button - eng o'ng chetda */}
+          {/* Daily save button - yuqorida */}
           {!record.is_night_shift && typeof record.key === 'number' && (
-            <div style={{ position: 'absolute', right: '2px', top: '50%', transform: 'translateY(-50%)', zIndex: 10 }}>
+            <div style={{ position: 'absolute', right: '2px', top: '2px', zIndex: 10 }}>
+              {dailySaveStatus[record.key]?.saved ? (
+                <Badge 
+                  status="success" 
+                  size="small"
+                  title={`${record.key}-kun saqlangan`}
+                />
+              ) : dailySaveStatus[record.key]?.canSave ? (
+                <Button
+                  type="primary"
+                  size="small"
+                  loading={savingDay === record.key}
+                  onClick={() => handleDailySave(record.key)}
+                  title={`${record.key}-kunni saqlash`}
+                  style={{ 
+                    width: '20px', 
+                    height: '16px', 
+                    fontSize: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: 'unset',
+                    padding: 0,
+                    backgroundColor: '#52c41a',
+                    borderColor: '#52c41a'
+                  }}
+                >
+                  💾
+                </Button>
+              ) : (
+                <Button
+                  disabled
+                  size="small"
+                  title={`${record.key}-kunni saqlash uchun oldingi kunlar saqlanishi kerak`}
+                  style={{ 
+                    width: '20px', 
+                    height: '16px', 
+                    fontSize: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: 'unset',
+                    padding: 0,
+                    opacity: 0.3
+                  }}
+                >
+                  🔒
+                </Button>
+              )}
+            </div>
+          )}
+          
+          {/* Night shift add/remove button - pastda */}
+          {!record.is_night_shift && typeof record.key === 'number' && (
+            <div style={{ position: 'absolute', right: '2px', bottom: '2px', zIndex: 10 }}>
               {!nightShifts.find(shift => shift.afterDay === record.key) ? (
                 <Button
                   type="primary"
@@ -1727,7 +2374,7 @@ const VehicleMonthlyCard = () => {
       )
     },
     {
-      title: '№',
+      title: <div style={{ textAlign: 'center', fontWeight: 'bold', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>№</div>,
       dataIndex: 'trip_number',
       key: 'trip_number',
       width: columnWidths['trip_number'] || 70,
@@ -1740,7 +2387,7 @@ const VehicleMonthlyCard = () => {
       )
     },
     {
-      title: 'Haydovchi',
+      title: <div style={{ textAlign: 'center', fontWeight: 'bold', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>HAYDOVCHI</div>,
       dataIndex: 'driver_id',
       key: 'driver_id',
       width: columnWidths['driver_id'] || 140,
@@ -1766,7 +2413,7 @@ disabled={false}
       }
     },
         {
-      title: 'Yuk ortuvchilar',
+      title: <div style={{ textAlign: 'center', fontWeight: 'bold', lineHeight: '20px', padding: '10px 0' }}>YUK ORTUVCHILAR</div>,
       width: columnWidths['yuk_ortuvchilar'] || 200,
       onHeaderCell: (column) => ({
         width: columnWidths['yuk_ortuvchilar'] || 200,
@@ -1774,7 +2421,7 @@ disabled={false}
       }),
       children: [
         {
-          title: '1',
+          title: <div style={{ textAlign: 'center', fontWeight: 'normal', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</div>,
           dataIndex: 'loader1_id',
           key: 'loader1_id',
           width: (columnWidths['yuk_ortuvchilar'] || 200) / 2,
@@ -1796,7 +2443,7 @@ disabled={false}
           }
         },
         {
-          title: '2',
+          title: <div style={{ textAlign: 'center', fontWeight: 'normal', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>2</div>,
           dataIndex: 'loader2_id',
           key: 'loader2_id',
           width: (columnWidths['yuk_ortuvchilar'] || 200) / 2,
@@ -1820,7 +2467,7 @@ disabled={false}
       ]
     },
     {
-      title: 'Spidometr',
+      title: <div style={{ textAlign: 'center', fontWeight: 'bold', lineHeight: '20px', padding: '10px 0' }}>SPIDOMETR</div>,
       width: columnWidths['spidometr'] || 160,
       onHeaderCell: (column) => ({
         width: columnWidths['spidometr'] || 160,
@@ -1828,7 +2475,7 @@ disabled={false}
       }),
       children: [
         {
-          title: <div>Chiqish<br/><span style={{ fontSize: '8px', fontWeight: 'normal' }}>(1-kun: manual, qolgani: avto)</span></div>,
+          title: <div style={{ textAlign: 'center', height: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>CHIQISH<br/><span style={{ fontSize: '8px', fontWeight: 'normal' }}>(1-kun: manual, qolgani: avto)</span></div>,
           dataIndex: 'odometer_start',
           key: 'odometer_start',
           width: (columnWidths['spidometr'] || 160) / 2,
@@ -1887,7 +2534,7 @@ disabled={false}
           }
         },
         {
-          title: <div>Qaytish<br/><span style={{ fontSize: '8px', fontWeight: 'normal' }}>(chiqish + km)</span></div>,
+          title: <div style={{ textAlign: 'center', height: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>QAYTISH<br/><span style={{ fontSize: '8px', fontWeight: 'normal' }}>(chiqish + km)</span></div>,
           dataIndex: 'odometer_end',
           key: 'odometer_end',
           width: (columnWidths['spidometr'] || 160) / 2,
@@ -1953,7 +2600,7 @@ disabled={false}
       ]
     },
     {
-      title: <div style={{ color: '#1890ff', fontWeight: 'bold' }}>KM<br/><span style={{ fontSize: '9px', fontWeight: 'normal' }}>(kiritish)</span></div>,
+      title: <div style={{ textAlign: 'center', color: '#1890ff', fontWeight: 'bold', height: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>KM<br/><span style={{ fontSize: '9px', fontWeight: 'normal' }}>(kiritish)</span></div>,
       dataIndex: 'daily_km',
       key: 'daily_km',
       width: columnWidths['daily_km'] || 80,
@@ -1975,33 +2622,90 @@ disabled={false}
       }
     },
     {
-      title: 'Poligon safarlari',
-      width: columnWidths['poligon_safarlari'] || 220,
+      title: <div style={{ textAlign: 'center', fontWeight: 'bold', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>QATNOV</div>,
+      dataIndex: 'waste_tbo_trips',
+      key: 'waste_tbo_trips',
+      width: columnWidths['qatnov'] || 120,
       onHeaderCell: (column) => ({
-        width: columnWidths['poligon_safarlari'] || 220,
-        onResize: (width) => handleColumnResize('poligon_safarlari', width),
+        width: columnWidths['qatnov'] || 120,
+        onResize: (width) => handleColumnResize('qatnov', width),
       }),
-      children: [
-        {
-          title: 'Soni',
-          dataIndex: 'waste_tbo_trips',
-          key: 'waste_tbo_trips',
-          width: (columnWidths['poligon_safarlari'] || 220) / 3,
-          render: (text, record) => (
-            <EditableCell record={record} field="waste_tbo_trips" value={text} />
-          )
-        },
-        {
-          title: 'Poligonlar',
-          dataIndex: 'polygons',
-          key: 'polygons',
-          width: (columnWidths['poligon_safarlari'] || 220) * 2 / 3,
-          render: (text, record) => renderPolygonDestinations(record)
-        }
-      ]
+      render: (text, record) => {
+        const tripCount = text || 0;
+        const polygonCount = [record.polygon_1, record.polygon_2, record.polygon_3, record.polygon_4, record.polygon_5]
+          .filter(p => p && typeof p === 'string' && p.trim()).length;
+        
+        return (
+          <div 
+            style={{ 
+              cursor: 'pointer', 
+              textAlign: 'center',
+              padding: '8px',
+              borderRadius: '6px',
+              background: tripCount > 0 
+                ? 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)'
+                : 'linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)',
+              border: tripCount > 0 
+                ? '2px solid #2196f3' 
+                : '2px dashed #90caf9',
+              boxShadow: tripCount > 0 
+                ? '0 2px 8px rgba(33, 150, 243, 0.15)' 
+                : '0 1px 3px rgba(0,0,0,0.1)',
+              transition: 'all 0.3s ease',
+              minHeight: '36px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onClick={() => handleTripsModalOpen(record)}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-1px)';
+              e.target.style.boxShadow = '0 4px 12px rgba(33, 150, 243, 0.25)';
+              e.target.style.borderColor = '#2196f3';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = tripCount > 0 
+                ? '0 2px 8px rgba(33, 150, 243, 0.15)' 
+                : '0 1px 3px rgba(0,0,0,0.1)';
+              e.target.style.borderColor = tripCount > 0 ? '#2196f3' : '#90caf9';
+            }}
+            title={`${tripCount} ta qatnov • ${polygonCount} ta poligon`}
+          >
+            <div style={{ 
+              fontWeight: '700', 
+              fontSize: tripCount > 0 ? '16px' : '14px', 
+              color: tripCount > 0 ? '#1976d2' : '#9e9e9e'
+            }}>
+              {tripCount > 0 ? tripCount : '0'}
+            </div>
+            {polygonCount > 0 && (
+              <div style={{ 
+                fontSize: '10px', 
+                color: '#4caf50',
+                fontWeight: '600',
+                marginTop: '2px'
+              }}>
+                {polygonCount} poligon
+              </div>
+            )}
+            {tripCount === 0 && (
+              <div style={{ 
+                fontSize: '11px', 
+                color: '#1976d2',
+                marginTop: '2px',
+                fontWeight: '500'
+              }}>
+                + bosing
+              </div>
+            )}
+          </div>
+        );
+      }
     },
     {
-      title: 'Ish soati',
+      title: <div style={{ textAlign: 'center', fontWeight: 'bold', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>ISH SOATI</div>,
       dataIndex: 'machine_hours',
       key: 'machine_hours',
       width: columnWidths['machine_hours'] || 80,
@@ -2014,7 +2718,7 @@ disabled={false}
       )
     },
     {
-      title: 'Hajm (m³)',
+      title: <div style={{ textAlign: 'center', fontWeight: 'bold', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>HAJM (M³)</div>,
       dataIndex: 'waste_volume_m3',
       key: 'waste_volume_m3',
       width: columnWidths['waste_volume_m3'] || 100,
@@ -2114,7 +2818,7 @@ disabled={false}
       }
     },
     {
-      title: 'Yoqilg\'i',
+      title: <div style={{ textAlign: 'center', fontWeight: 'bold', lineHeight: '20px', padding: '10px 0' }}>YOQILG'I</div>,
       width: columnWidths['yoqilgi'] || 320,
       onHeaderCell: (column) => ({
         width: columnWidths['yoqilgi'] || 320,
@@ -2122,17 +2826,92 @@ disabled={false}
       }),
       children: [
         {
-          title: <div>Qoldiq<br/>boshi</div>,
+          title: <div style={{ textAlign: 'center', height: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>QOLDIQ<br/>BOSHI ({getFuelUnit()})</div>,
           dataIndex: 'fuel_remaining_start',
           key: 'fuel_remaining_start', 
           width: (columnWidths['yoqilgi'] || 320) / 4,
-          render: (text, record) => (
-            <EditableCell record={record} field="fuel_remaining_start" value={text} />
-          )
+          render: (text, record) => {
+            // Tungi smena uchun alohida mantiq
+            if (record.is_night_shift) {
+              // Tungi smena qoldiq boshi = kun qoldiq oxiri
+              const dayKey = parseInt(record.key.split('_')[0]);
+              const dayRecord = monthlyData.find(d => d.key === dayKey);
+              let displayValue = 0;
+              
+              if (dayRecord) {
+                const dayFuelStart = dayRecord.fuel_remaining_start || 0;
+                const dayFuelTaken = dayRecord.fuel_taken || 0;
+                const dayFuelNorm = calculateFuelNorm(dayRecord);
+                displayValue = Math.max(0, dayFuelStart + dayFuelTaken - dayFuelNorm);
+              }
+              
+              return (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '4px 8px',
+                  backgroundColor: '#f0f0ff',
+                  borderRadius: '4px',
+                  border: '1px solid #b3b3ff',
+                  fontWeight: 'bold',
+                  color: '#4d4d99'
+                }}>
+                  {displayValue.toFixed(1)}
+                  <div style={{ fontSize: '8px', color: '#6666cc', marginTop: '1px' }}>
+                    kun oxiridan
+                  </div>
+                </div>
+              );
+            }
+            
+            // 1-kun uchun oy boshi yoqilg'i, boshqalar uchun oldingi kun qoldiq oxiri
+            let displayValue;
+            let isAutoCalculated = false;
+            
+            if (record.key === 1) {
+              displayValue = monthStartFuel || 50;
+              isAutoCalculated = false; // 1-kun manual
+            } else {
+              // Oldingi kunni topish
+              const previousDay = monthlyData.find(d => d.key === record.key - 1);
+              if (previousDay) {
+                const prevFuelStart = previousDay.fuel_remaining_start || 0;
+                const prevFuelTaken = previousDay.fuel_taken || 0;
+                const prevFuelNorm = calculateFuelNorm(previousDay);
+                displayValue = Math.max(0, prevFuelStart + prevFuelTaken - prevFuelNorm);
+                isAutoCalculated = true;
+              } else {
+                displayValue = text || 0;
+                isAutoCalculated = false;
+              }
+            }
+            
+            if (isAutoCalculated) {
+              return (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '4px 8px',
+                  backgroundColor: '#f5f5f5',
+                  borderRadius: '4px',
+                  border: '1px solid #d9d9d9',
+                  fontWeight: 'bold',
+                  color: '#666'
+                }}>
+                  {displayValue.toFixed(1)}
+                  <div style={{ fontSize: '8px', color: '#999', marginTop: '1px' }}>
+                    avtomatik
+                  </div>
+                </div>
+              );
+            } else {
+              return (
+                <EditableCell record={record} field="fuel_remaining_start" value={displayValue} />
+              );
+            }
+          }
         },
 
         {
-          title: 'Olindi',
+          title: <div style={{ textAlign: 'center', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>OLINDI ({getFuelUnit()})</div>,
           dataIndex: 'fuel_taken',
           key: 'fuel_taken',
           width: (columnWidths['yoqilgi'] || 320) / 4,
@@ -2196,7 +2975,7 @@ disabled={false}
                     fontWeight: '500',
                     color: '#6c757d'
                   }}>
-                    L
+                    {getFuelUnit()}
                   </span>
                 </div>
                 {fuelSources.length > 1 && (
@@ -2226,7 +3005,36 @@ disabled={false}
           }
         },
         {
-          title: <div>Norma<br/>sarfi</div>,
+          title: (
+            <div style={{ position: 'relative' }}>
+              <div style={{ textAlign: 'center', height: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>NORMA<br/>SARFI ({getFuelUnit()})</div>
+              <div 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setWeatherImpactEnabled(!weatherImpactEnabled);
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '-2px',
+                  right: '-8px',
+                  width: '16px',
+                  height: '16px',
+                  backgroundColor: weatherImpactEnabled ? '#52c41a' : '#d9d9d9',
+                  borderRadius: '3px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '10px',
+                  color: 'white',
+                  fontWeight: 'bold'
+                }}
+                title={`Ob-havo ta'siri: ${weatherImpactEnabled ? 'YONIQ' : 'O\'CHIQ'}`}
+              >
+                ☁
+              </div>
+            </div>
+          ),
           dataIndex: 'fuel_norm_consumption',
           key: 'fuel_norm_consumption',
           width: (columnWidths['yoqilgi'] || 320) / 4,
@@ -2234,37 +3042,52 @@ disabled={false}
             // Avtomatik norma hisobi
             const dailyKm = Math.max(0, (record.odometer_end || 0) - (record.odometer_start || 0));
             const trips = record.waste_tbo_trips || 0;
-            const vehicleNormPer100km = vehicle?.fuel_norm_per_100km || 27; // Default 27l/100km
-            const tripFuelNorm = vehicle?.fuel_norm_per_trip || 2; // Default 2l/trip
+            const vehicleNormPer100km = vehicle?.fuel_consumption_per_100km || 27; // From vehicle settings
+            const tripFuelNorm = vehicle?.trip_consumption || 2; // From vehicle settings
             
             // Base calculation
             const kmNorm = (dailyKm / 100) * vehicleNormPer100km;
             const tripNorm = trips * tripFuelNorm;
             let totalNorm = kmNorm + tripNorm;
             
-            // Weather adjustment: +5% if temperature below 0°C
-            const temp = record.weather_temp || 0;
+            // Weather adjustment: +5% if temperature below 0°C (only if enabled)
+            const temp = record.weather_temp;
             let weatherAdjustment = 0;
-            if (temp < 0) {
+            if (weatherImpactEnabled && temp !== null && temp < 0) {
               weatherAdjustment = totalNorm * 0.05; // 5% increase for cold weather
               totalNorm += weatherAdjustment;
             }
             
             return (
               <div style={{ textAlign: 'center', fontSize: '10px' }}>
-                <div style={{ fontWeight: 'bold', color: '#1890ff', marginBottom: '2px' }}>
-                  {totalNorm.toFixed(1)}л
+                <div style={{ 
+                  fontWeight: 'bold', 
+                  color: '#1890ff', 
+                  marginBottom: '2px',
+                  position: 'relative'
+                }}>
+                  {totalNorm.toFixed(1)}{getFuelUnit()}
+                  {temp !== null && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-2px',
+                      right: '-2px',
+                      fontSize: '6px',
+                      backgroundColor: temp < 0 ? '#ff4d4f' : '#52c41a',
+                      color: 'white',
+                      padding: '1px 3px',
+                      borderRadius: '2px',
+                      lineHeight: '1'
+                    }}>
+                      {temp}°C
+                    </div>
+                  )}
                 </div>
                 <div style={{ fontSize: '8px', color: '#666', lineHeight: '1.2' }}>
                   {kmNorm.toFixed(1)}+{tripNorm.toFixed(1)}
                   {weatherAdjustment > 0 && (
                     <div style={{ color: '#ff4d4f', fontSize: '7px' }}>
-                      +{weatherAdjustment.toFixed(1)}л ({temp}°C)
-                    </div>
-                  )}
-                  {temp !== null && temp >= 0 && (
-                    <div style={{ color: '#52c41a', fontSize: '7px' }}>
-                      {temp}°C
+                      +{weatherAdjustment.toFixed(1)}{getFuelUnit()} (sovuq)
                     </div>
                   )}
                 </div>
@@ -2273,13 +3096,59 @@ disabled={false}
           }
         },
         {
-          title: <div>Qoldiq<br/>oxiri</div>,
+          title: <div style={{ textAlign: 'center', height: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>QOLDIQ<br/>OXIRI ({getFuelUnit()})</div>,
           dataIndex: 'fuel_remaining_end',
           key: 'fuel_remaining_end',
           width: (columnWidths['yoqilgi'] || 320) / 4,
-          render: (text, record) => (
-            <EditableCell record={record} field="fuel_remaining_end" value={text} />
-          )
+          render: (text, record) => {
+            // Tungi smena uchun alohida mantiq
+            if (record.is_night_shift) {
+              const nightFuelStart = record.fuel_remaining_start || 0;
+              const nightFuelTaken = record.fuel_taken || 0;
+              const nightFuelNorm = calculateFuelNorm(record);
+              const nightCalculatedEnd = Math.max(0, nightFuelStart + nightFuelTaken - nightFuelNorm);
+              
+              return (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '4px 8px',
+                  backgroundColor: '#f0f0ff',
+                  borderRadius: '4px',
+                  border: '1px solid #b3b3ff',
+                  fontWeight: 'bold',
+                  color: nightCalculatedEnd > 0 ? '#6666cc' : '#ff4d4f'
+                }}>
+                  {nightCalculatedEnd.toFixed(1)}
+                  <div style={{ fontSize: '8px', color: '#6666cc', marginTop: '1px' }}>
+                    {nightFuelStart.toFixed(1)}+{nightFuelTaken.toFixed(1)}-{nightFuelNorm.toFixed(1)} (tungi)
+                  </div>
+                </div>
+              );
+            }
+            
+            // Avtomatik hisoblash: qoldiq boshi + olindi - norma sarfi
+            const fuelStart = record.fuel_remaining_start || 0;
+            const fuelTaken = record.fuel_taken || 0;
+            const fuelNorm = calculateFuelNorm(record);
+            const calculatedEnd = Math.max(0, fuelStart + fuelTaken - fuelNorm);
+            
+            return (
+              <div style={{
+                textAlign: 'center',
+                padding: '4px 8px',
+                backgroundColor: '#f0f0f0',
+                borderRadius: '4px',
+                border: '1px solid #d9d9d9',
+                fontWeight: 'bold',
+                color: calculatedEnd > 0 ? '#1890ff' : '#ff4d4f'
+              }}>
+                {calculatedEnd.toFixed(1)}
+                <div style={{ fontSize: '8px', color: '#999', marginTop: '1px' }}>
+                  {fuelStart.toFixed(1)}+{fuelTaken.toFixed(1)}-{fuelNorm.toFixed(1)}
+                </div>
+              </div>
+            );
+          }
         }
       ]
     }
@@ -2321,6 +3190,15 @@ disabled={false}
     return <Spin size="large" style={{ display: 'block', textAlign: 'center', padding: '100px' }} />;
   }
 
+  if (!monthlyData || monthlyData.length === 0) {
+    return (
+      <div style={{ padding: '100px', textAlign: 'center' }}>
+        <Spin size="large" />
+        <div style={{ marginTop: 16 }}>Ma'lumotlar yuklanmoqda...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="vehicle-monthly-card-fullscreen" onClick={() => setContextMenu(null)}>
       {/* Context Menu */}
@@ -2331,6 +3209,9 @@ disabled={false}
       
       {/* Fuel Sources Modal */}
       <FuelSourcesModal />
+      
+      {/* Trips Modal */}
+      <TripsModal />
       
             <Card 
         className="header-card" 
@@ -2443,7 +3324,7 @@ disabled={false}
                       Bak
                     </div>
                     <div style={{ fontSize: 18, fontWeight: '700', color: '#ffffff' }}>
-                      {vehicle?.fuel_tank_volume || '--'} L
+                      {vehicle?.fuel_tank_volume || '--'} {getFuelUnit()}
                     </div>
                   </div>
                 </Col>
@@ -2463,7 +3344,7 @@ disabled={false}
                       100km sarf
                     </div>
                     <div style={{ fontSize: 18, fontWeight: '700', color: '#ffffff' }}>
-                      {vehicle?.fuel_consumption_per_100km || '--'} L
+                      {vehicle?.fuel_consumption_per_100km || '--'} {getFuelUnit()}
                     </div>
                   </div>
                 </Col>
@@ -2483,7 +3364,7 @@ disabled={false}
                       Qatnov
                     </div>
                     <div style={{ fontSize: 18, fontWeight: '700', color: '#ffffff' }}>
-                      {vehicle?.trip_consumption || '--'} L
+                      {vehicle?.trip_consumption || '--'} {getFuelUnit()}
                     </div>
                   </div>
                 </Col>
@@ -2603,9 +3484,7 @@ disabled={false}
           <Row gutter={[12, 0]} align="middle">
             <Col span={3}>
               <div style={{ 
-                backgroundColor: 'white',
-                border: '1px solid #dee2e6',
-                borderRadius: 6,
+                backgroundColor: 'transparent',
                 padding: '10px',
                 textAlign: 'center',
                 height: 65
@@ -2613,32 +3492,29 @@ disabled={false}
                 <div style={{ fontSize: 11, color: '#6c757d', marginBottom: 4 }}>
                   Oy boshi spidometr
                 </div>
-                <InputNumber
-                  value={monthStartOdometer || 10000}
-                  onChange={setMonthStartOdometer}
+                <div 
                   style={{ 
-                    width: '100%',
-                    fontSize: '18px',
-                    fontWeight: '700',
-                    border: 'none',
-                    textAlign: 'center',
-                    color: '#2c3e50'
+                    fontSize: '20px', 
+                    fontWeight: '700', 
+                    color: '#2c3e50',
+                    cursor: 'pointer',
+                    userSelect: 'none'
                   }}
-                  min={0}
-                  max={99999999}
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/\$\s?|(,*)/g, '')}
-                  controls={false}
-                  variant="borderless"
-                />
+                  onClick={() => {
+                    const newValue = prompt('Oy boshi spidometrni kiriting:', monthStartOdometer || 10000);
+                    if (newValue !== null && !isNaN(newValue)) {
+                      setMonthStartOdometer(parseInt(newValue));
+                    }
+                  }}
+                >
+                  {`${monthStartOdometer || 10000}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                </div>
               </div>
             </Col>
 
             <Col span={3}>
               <div style={{ 
-                backgroundColor: 'white',
-                border: '1px solid #dee2e6',
-                borderRadius: 6,
+                backgroundColor: 'transparent',
                 padding: '10px',
                 textAlign: 'center',
                 height: 65
@@ -2646,23 +3522,23 @@ disabled={false}
                 <div style={{ fontSize: 11, color: '#6c757d', marginBottom: 4 }}>
                   Oy boshi yoqilg'i
                 </div>
-                <InputNumber
-                  value={monthStartFuel}
-                  onChange={setMonthStartFuel}
+                <div 
                   style={{ 
-                    width: '100%',
-                    fontSize: '18px',
-                    fontWeight: '700',
-                    border: 'none',
-                    textAlign: 'center',
-                    color: '#2c3e50'
+                    fontSize: '20px', 
+                    fontWeight: '700', 
+                    color: '#2c3e50',
+                    cursor: 'pointer',
+                    userSelect: 'none'
                   }}
-                  min={0}
-                  max={9999}
-                  precision={2}
-                  controls={false}
-                  variant="borderless"
-                />
+                  onClick={() => {
+                    const newValue = prompt('Oy boshi yoqilg\'ini kiriting:', monthStartFuel || 50);
+                    if (newValue !== null && !isNaN(newValue)) {
+                      setMonthStartFuel(parseFloat(newValue));
+                    }
+                  }}
+                >
+                  {monthStartFuel || 50}
+                </div>
               </div>
             </Col>
             
@@ -2696,7 +3572,7 @@ disabled={false}
             
             <Col span={3}>
               <div style={{ backgroundColor: 'white', border: '1px solid #dee2e6', borderRadius: 6, padding: '10px', textAlign: 'center', height: 65 }}>
-                <div style={{ fontSize: 11, color: '#6c757d', marginBottom: 4 }}>Yoqilg'i (L)</div>
+                <div style={{ fontSize: 11, color: '#6c757d', marginBottom: 4 }}>Yoqilg'i ({getFuelUnit()})</div>
                 <div style={{ fontSize: 20, fontWeight: '700', color: '#2c3e50' }}>{monthTotal.fuel_taken.toFixed(1)}</div>
               </div>
             </Col>
@@ -2835,12 +3711,26 @@ disabled={false}
       </Card>
 
       <Card style={{ 
-        overflow: 'auto',
+        overflow: 'hidden',
         margin: 0,
         borderRadius: 0,
         border: 'none',
         boxShadow: 'none'
       }}>
+        <div 
+          ref={tableOuterRef}
+          className="table-fit-container"
+          style={{ width: '100%', overflowX: 'hidden' }}
+        >
+          <div
+            ref={tableInnerRef}
+            className="table-fit-inner"
+            style={{ 
+              transform: `scale(${tableScale})`, 
+              transformOrigin: 'top left',
+              width: `${100 / tableScale}%`
+            }}
+          >
         <Table
           columns={columns}
           dataSource={[...monthlyData, ...nightShifts.map(shift => shift.data)].sort((a, b) => {
@@ -2867,7 +3757,7 @@ disabled={false}
           })}
           loading={loading}
           pagination={false}
-          scroll={{ x: '100vw', y: 'calc(100vh - 300px)' }}
+          scroll={{ y: 'calc(100vh - 300px)' }}
           size="small"
           className="monthly-table"
           bordered
@@ -2888,25 +3778,36 @@ disabled={false}
           }}
           summary={() => (
             <Table.Summary.Row style={{ backgroundColor: '#fafafa', fontWeight: 'bold' }}>
+              {/* 0: SANA */}
               <Table.Summary.Cell index={0}>Jami</Table.Summary.Cell>
+              {/* 1: № */}
               <Table.Summary.Cell index={1}>{monthTotal.tripNumbers}</Table.Summary.Cell>
+              {/* 2: HAYDOVCHI */}
               <Table.Summary.Cell index={2}>-</Table.Summary.Cell>
+              {/* 3-4: YUK ORTUVCHILAR (1,2) */}
               <Table.Summary.Cell index={3}>-</Table.Summary.Cell>
               <Table.Summary.Cell index={4}>-</Table.Summary.Cell>
+              {/* 5-6: SPIDOMETR (chiqish, qaytish) */}
               <Table.Summary.Cell index={5}>{monthStartOdometer}</Table.Summary.Cell>
               <Table.Summary.Cell index={6}>{monthTotal.odometer_end}</Table.Summary.Cell>
+              {/* 7: KM */}
               <Table.Summary.Cell index={7}>{monthTotal.distance}</Table.Summary.Cell>
+              {/* 8: QATNOV */}
               <Table.Summary.Cell index={8}>{monthTotal.trips}</Table.Summary.Cell>
-              <Table.Summary.Cell index={9}>-</Table.Summary.Cell>
-              <Table.Summary.Cell index={10}>{monthTotal.machine_hours}</Table.Summary.Cell>
-              <Table.Summary.Cell index={11}>{monthTotal.waste_volume}</Table.Summary.Cell>
-              <Table.Summary.Cell index={12}>{monthTotal.fuel_remaining_start.toFixed(1)}</Table.Summary.Cell>
-              <Table.Summary.Cell index={13}>{monthTotal.fuel_taken.toFixed(1)}</Table.Summary.Cell>
-              <Table.Summary.Cell index={14}>-</Table.Summary.Cell>
-              <Table.Summary.Cell index={15}>{monthTotal.fuel_remaining_end.toFixed(1)}</Table.Summary.Cell>
+              {/* 9: ISH SOATI */}
+              <Table.Summary.Cell index={9}>{monthTotal.machine_hours}</Table.Summary.Cell>
+              {/* 10: HAJM (m3) */}
+              <Table.Summary.Cell index={10}>{monthTotal.waste_volume}</Table.Summary.Cell>
+              {/* 11-14: YOQILG'I (qoldiq boshi, olindi, norma, qoldiq oxiri) */}
+              <Table.Summary.Cell index={11}>{monthTotal.fuel_remaining_start.toFixed(1)}</Table.Summary.Cell>
+              <Table.Summary.Cell index={12}>{monthTotal.fuel_taken.toFixed(1)}</Table.Summary.Cell>
+              <Table.Summary.Cell index={13}>-</Table.Summary.Cell>
+              <Table.Summary.Cell index={14}>{monthTotal.fuel_remaining_end.toFixed(1)}</Table.Summary.Cell>
             </Table.Summary.Row>
           )}
         />
+          </div>
+        </div>
       </Card>
     </div>
   );

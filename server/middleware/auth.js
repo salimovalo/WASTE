@@ -3,7 +3,14 @@ const { User, Role, Company } = require('../models');
 
 // JWT token yaratish
 const generateToken = (userId) => {
-  const JWT_SECRET = process.env.JWT_SECRET || 'waste_management_super_secret_key_2024_uzbekistan_system_12345';
+  // Default JWT secret agar environment variable mavjud bo'lmasa
+  const JWT_SECRET = process.env.JWT_SECRET || 'waste_management_system_ultra_secure_jwt_secret_key_2025_uzbekistan_tashkent_12345678';
+  
+  // Xavfsizlik tekshiruvi
+  if (JWT_SECRET.length < 32) {
+    console.warn('⚠️  JWT_SECRET 32 belgidan kam. Xavfsizlik uchun uzunroq kalit ishlating.');
+  }
+  
   return jwt.sign(
     { userId },
     JWT_SECRET,
@@ -23,7 +30,9 @@ const authenticate = async (req, res, next) => {
     }
     
     const token = authHeader.substring(7);
-    const JWT_SECRET = process.env.JWT_SECRET || 'waste_management_super_secret_key_2024_uzbekistan_system_12345';
+    // Default JWT secret agar environment variable mavjud bo'lmasa
+    const JWT_SECRET = process.env.JWT_SECRET || 'waste_management_system_ultra_secure_jwt_secret_key_2025_uzbekistan_tashkent_12345678';
+    
     const decoded = jwt.verify(token, JWT_SECRET);
     
     const user = await User.findByPk(decoded.userId, {

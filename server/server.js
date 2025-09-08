@@ -4,6 +4,10 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+// Import custom utilities
+const { logger, requestLogger } = require('./utils/logger');
+const { handleValidationError } = require('./middleware/validation');
+
 const { sequelize, syncDatabase } = require('./models');
 const authRoutes = require('./routes/auth');
 const companiesRoutes = require('./routes/companies');
@@ -17,6 +21,9 @@ const fuelStationsRoutes = require('./routes/fuel-stations');
 const dailyWorkStatusRoutes = require('./routes/daily-work-status');
 const workStatusReasonsRoutes = require('./routes/work-status-reasons');
 const employeesRoutes = require('./routes/employees');
+const tripSheetsSingleRoutes = require('./routes/trip-sheets-single');
+const weatherRoutes = require('./routes/weather');
+const polygonsRoutes = require('./routes/polygons');
 
 // Database backup middleware
 const { criticalBackup, scheduleDailyBackup } = require('./middleware/database-backup');
@@ -63,6 +70,9 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
+// Request logging
+app.use(requestLogger);
+
 // Body parser middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -105,11 +115,14 @@ app.use('/api/fuel-stations', fuelStationsRoutes);
 app.use('/api/daily-work-status', dailyWorkStatusRoutes);
 app.use('/api/work-status-reasons', workStatusReasonsRoutes);
 app.use('/api/employees', employeesRoutes);
+app.use('/api/weather', weatherRoutes);
+app.use('/api/polygons', polygonsRoutes);
 
 // 206 Xisobot routes
 const tripSheetsRoutes = require('./routes/trip-sheets');
 const disposalSitesRoutes = require('./routes/disposal-sites');
 app.use('/api/trip-sheets', tripSheetsRoutes);
+app.use('/api/trip-sheets', tripSheetsSingleRoutes);
 app.use('/api/disposal-sites', disposalSitesRoutes);
 
 // Database management endpoints
@@ -162,29 +175,18 @@ app.use('*', (req, res) => {
   });
 });
 
+// Validation error handler
+app.use(handleValidationError);
+
 // Global error handler
 app.use((error, req, res, next) => {
-  console.error('🔥 Server xatoligi:', error);
-  
-  // Sequelize validation errors
-  if (error.name === 'SequelizeValidationError') {
-    const errors = error.errors.map(err => ({
-      field: err.path,
-      message: err.message
-    }));
-    return res.status(400).json({
-      error: 'Ma\'lumotlar validatsiyasi xatoligi',
-      details: errors
-    });
-  }
-  
-  // Sequelize unique constraint errors
-  if (error.name === 'SequelizeUniqueConstraintError') {
-    return res.status(400).json({
-      error: 'Bu ma\'lumot allaqachon mavjud',
-      field: error.errors[0]?.path
-    });
-  }
+  logger.errorWithStack(error, {
+    url: req.originalUrl,
+    method: req.method,
+    userId: req.user?.id,
+    userAgent: req.get('User-Agent'),
+    ip: req.ip
+  });
   
   // JWT errors
   if (error.name === 'JsonWebTokenError') {
@@ -198,13 +200,25 @@ app.use((error, req, res, next) => {
       error: 'Token muddati tugagan'
     });
   }
+
+  // Environment variable errors
+  if (error.message.includes('JWT_SECRET')) {
+    logger.error('Critical: JWT_SECRET not configured properly');
+    return res.status(500).json({
+      error: 'Server konfiguratsiya xatoligi'
+    });
+  }
   
   // Default error
-  res.status(error.status || 500).json({
+  const statusCode = error.status || error.statusCode || 500;
+  res.status(statusCode).json({
     error: process.env.NODE_ENV === 'production' 
       ? 'Ichki server xatoligi' 
       : error.message,
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+    ...(process.env.NODE_ENV === 'development' && { 
+      stack: error.stack,
+      details: error.details 
+    })
   });
 });
 

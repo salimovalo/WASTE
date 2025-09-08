@@ -22,6 +22,14 @@ const TripSheet = require('./TripSheet');
 const DisposalSite = require('./DisposalSite');
 const TripLoad = require('./TripLoad');
 
+// Ob-havo modellari
+const Weather = require('./Weather');
+const WeatherConfig = require('./WeatherConfig');
+const WeatherLocation = require('./WeatherLocation');
+
+// Poligon modeli
+const Polygon = require('./Polygon');
+
 // Bog'lanishlarni o'rnatish
 
 // Company → Districts (One-to-Many)
@@ -403,6 +411,53 @@ VehicleWorkStatus.belongsTo(User, {
   as: 'confirmer'
 });
 
+// === Ob-havo associations ===
+
+// District → Weather (One-to-Many)
+District.hasMany(Weather, {
+  foreignKey: 'district_id',
+  as: 'weather_data',
+  onDelete: 'CASCADE'
+});
+Weather.belongsTo(District, {
+  foreignKey: 'district_id',
+  as: 'district'
+});
+
+// District → WeatherLocation (One-to-One)
+District.hasOne(WeatherLocation, {
+  foreignKey: 'district_id',
+  as: 'weather_location',
+  onDelete: 'CASCADE'
+});
+WeatherLocation.belongsTo(District, {
+  foreignKey: 'district_id',
+  as: 'district'
+});
+
+// Polygon bog'lanishlari
+// District → Polygons (One-to-Many)
+District.hasMany(Polygon, {
+  foreignKey: 'district_id',
+  as: 'polygons',
+  onDelete: 'SET NULL'
+});
+Polygon.belongsTo(District, {
+  foreignKey: 'district_id',
+  as: 'district'
+});
+
+// Company → Polygons (One-to-Many)
+Company.hasMany(Polygon, {
+  foreignKey: 'company_id',
+  as: 'polygons',
+  onDelete: 'SET NULL'
+});
+Polygon.belongsTo(Company, {
+  foreignKey: 'company_id',
+  as: 'company'
+});
+
 // Ma'lumotlar bazasini sinxronlash funksiyasi
 const syncDatabase = async (force = false) => {
   try {
@@ -441,5 +496,13 @@ module.exports = {
   // 206 Xisobot models
   TripSheet,
   DisposalSite,
-  TripLoad
+  TripLoad,
+  
+  // Ob-havo models
+  Weather,
+  WeatherConfig,
+  WeatherLocation,
+  
+  // Poligon model
+  Polygon
 };

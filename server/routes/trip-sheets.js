@@ -446,131 +446,6 @@ router.put('/:id/approve', authenticate, async (req, res) => {
 });
 
 // Statistika olish
-// Oylik ma'lumotlarni olish
-router.get('/monthly/:vehicleId', async (req, res) => {
-  try {
-    const { vehicleId } = req.params;
-    const { month } = req.query; // Format: YYYY-MM
-    
-    if (!month) {
-      return res.status(400).json({
-        success: false,
-        message: 'Oy parametri kerak'
-      });
-    }
-    
-    const monthStart = new Date(month + '-01');
-    const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
-    
-    const tripSheets = await TripSheet.findAll({
-      where: {
-        vehicle_id: vehicleId,
-        date: {
-          [Op.gte]: monthStart,
-          [Op.lte]: monthEnd
-        }
-      },
-      include: [
-        {
-          model: TripLoad,
-          as: 'loads'
-        },
-        {
-          model: Employee,
-          as: 'driver',
-          attributes: ['id', 'first_name', 'last_name', 'position']
-        }
-      ],
-      order: [['date', 'ASC']]
-    });
-    
-    res.json({
-      success: true,
-      data: tripSheets
-    });
-  } catch (error) {
-    console.error('Get monthly trip sheets error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server xatosi',
-      error: error.message
-    });
-  }
-});
-
-// Oylik ma'lumotlarni saqlash
-router.post('/monthly/:vehicleId', authenticate, async (req, res) => {
-  try {
-    const { vehicleId } = req.params;
-    const { month, data } = req.body;
-    
-    if (!month || !data) {
-      return res.status(400).json({
-        success: false,
-        message: 'Oy va ma\'lumotlar parametrlari kerak'
-      });
-    }
-    
-    // Ma'lumotlarni saqlash yoki yangilash
-    const results = [];
-    
-    for (const dayData of data) {
-      if (dayData.trip_number || dayData.odometer_start > 0) {
-        const tripDate = new Date(month + '-' + String(dayData.key).padStart(2, '0'));
-        
-        const [tripSheet, created] = await TripSheet.findOrCreate({
-          where: {
-            vehicle_id: vehicleId,
-            date: tripDate
-          },
-          defaults: {
-            vehicle_id: vehicleId,
-            date: tripDate,
-            trip_number: dayData.trip_number,
-            driver_id: null, // To be updated with actual driver selection
-            odometer_start: dayData.odometer_start || 0,
-            odometer_end: dayData.odometer_end || 0,
-            fuel_start: dayData.fuel_remaining_start || 0,
-            fuel_taken: dayData.fuel_taken || 0,
-            fuel_consumption_actual: dayData.fuel_consumed_actual || 0,
-            total_trips: dayData.waste_tbo_trips || 0,
-            status: 'draft',
-            created_by: req.user.id
-          }
-        });
-        
-        if (!created) {
-          // Update existing record
-          await tripSheet.update({
-            trip_number: dayData.trip_number,
-            odometer_start: dayData.odometer_start || 0,
-            odometer_end: dayData.odometer_end || 0,
-            fuel_start: dayData.fuel_remaining_start || 0,
-            fuel_taken: dayData.fuel_taken || 0,
-            fuel_consumption_actual: dayData.fuel_consumed_actual || 0,
-            total_trips: dayData.waste_tbo_trips || 0,
-            updated_by: req.user.id
-          });
-        }
-        
-        results.push(tripSheet);
-      }
-    }
-    
-    res.json({
-      success: true,
-      message: `${results.length} ta yozuv saqlandi`,
-      data: results
-    });
-  } catch (error) {
-    console.error('Save monthly trip sheets error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server xatosi',
-      error: error.message
-    });
-  }
-});
 
 // Excel export
 router.get('/export/:vehicleId', authenticate, async (req, res) => {
@@ -941,6 +816,344 @@ router.get('/employees/loaders', authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Yuk ortuvchilar ro\'yxatini olishda xatolik',
+      error: error.message
+    });
+  }
+});
+
+// Oylik ma'lumotlarni olish
+router.get('/monthly/:vehicleId', authenticate, async (req, res) => {
+  try {
+    const { vehicleId } = req.params;
+    const { month } = req.query; // Format: YYYY-MM
+    
+    if (!month) {
+      return res.status(400).json({
+        success: false,
+        message: 'Oy parametri talab qilinadi (YYYY-MM formatda)'
+      });
+    }
+    
+    // Oy boshi va oxirini hisoblash
+    const monthStart = moment(month + '-01', 'YYYY-MM-DD').startOf('month');
+    const monthEnd = moment(month + '-01', 'YYYY-MM-DD').endOf('month');
+    
+    const tripSheets = await TripSheet.findAll({
+      where: {
+        vehicle_id: vehicleId,
+        date: {
+          [Op.between]: [monthStart.format('YYYY-MM-DD'), monthEnd.format('YYYY-MM-DD')]
+        }
+      },
+      include: [
+        {
+          model: Vehicle,
+          as: 'vehicle',
+          attributes: ['id', 'plate_number', 'capacity_m3']
+        }
+      ],
+      order: [['date', 'ASC']]
+    });
+    
+    // Kunlik saqlash holatini olish
+    const [year, monthNum] = month.split('-');
+    const dailySaveStatus = await TripSheet.getDailySaveStatus(vehicleId, parseInt(year), parseInt(monthNum));
+    
+    res.json({
+      success: true,
+      data: tripSheets,
+      dailySaveStatus: dailySaveStatus
+    });
+    
+  } catch (error) {
+    console.error('Oylik ma\'lumotlarni olishda xatolik:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Oylik ma\'lumotlarni olishda xatolik',
+      error: error.message
+    });
+  }
+});
+
+// Oylik ma'lumotlarni saqlash
+router.post('/monthly/:vehicleId', authenticate, async (req, res) => {
+  try {
+    const { vehicleId } = req.params;
+    const { month, data } = req.body;
+    
+    if (!month || !data) {
+      return res.status(400).json({
+        success: false,
+        message: 'Oy va ma\'lumotlar talab qilinadi'
+      });
+    }
+    
+    // 1) Kiruvchi ma'lumotlarni oldindan tekshirish
+    const validationErrors = [];
+    const validRecords = [];
+    
+    for (const dayData of data) {
+      const hasContent = dayData.trip_number || (dayData.odometer_start > 0) || (dayData.fuel_taken > 0) || (dayData.waste_tbo_trips > 0);
+      
+      if (hasContent) {
+        // Required field validation
+        if (!dayData.driver_id) {
+          validationErrors.push(`Kun ${dayData.key || dayData.date}: Haydovchi tanlanmagan`);
+          continue;
+        }
+        
+        // Odometer validation
+        if (dayData.odometer_start > 0 && dayData.odometer_end > 0) {
+          if (dayData.odometer_end < dayData.odometer_start) {
+            validationErrors.push(`Kun ${dayData.key || dayData.date}: Spidometr oxiri ko'rsatkichi boshlanishidan kichik`);
+            continue;
+          }
+        }
+        
+        // Fuel validation
+        if (dayData.fuel_consumed_actual > 0) {
+          const totalFuel = (dayData.fuel_remaining_start || 0) + (dayData.fuel_taken || 0);
+          if (dayData.fuel_consumed_actual > totalFuel) {
+            validationErrors.push(`Kun ${dayData.key || dayData.date}: Sarflangan yoqilg'i miqdori mavjud yoqilg'idan ko'proq`);
+            continue;
+          }
+        }
+        
+        validRecords.push(dayData);
+      }
+    }
+    
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ma\'lumotlarda xatoliklar mavjud',
+        errors: validationErrors
+      });
+    }
+
+    // 2) Oy boshi va oxirini hisoblash
+    const monthStart = moment(month + '-01', 'YYYY-MM-DD').startOf('month');
+    const monthEnd = moment(month + '-01', 'YYYY-MM-DD').endOf('month');
+    
+    // 3) Mavjud ma'lumotlarni o'chirish (faqat tekshiruvdan keyin)
+    await TripSheet.destroy({
+      where: {
+        vehicle_id: vehicleId,
+        date: {
+          [Op.between]: [monthStart.format('YYYY-MM-DD'), monthEnd.format('YYYY-MM-DD')]
+        }
+      }
+    });
+    
+    // 4) Yangi ma'lumotlarni saqlash
+    const savedRecords = [];
+    
+    for (const dayData of validRecords) {
+      try {
+        const tripDate = moment(month + '-' + String(dayData.key || dayData.date).padStart(2, '0'), 'YYYY-MM-DD');
+        
+        if (dayData.is_night_shift) {
+          // Tungi smena uchun alohida sana
+          const nightDate = tripDate.clone().add(12, 'hours'); // Tungi smena vaqti
+          
+          const nightRecord = await TripSheet.create({
+            vehicle_id: vehicleId,
+            date: nightDate.format('YYYY-MM-DD'),
+            trip_number: dayData.trip_number || `NIGHT-${dayData.after_day}`,
+            driver_id: dayData.driver_id,
+            loader1_id: dayData.loader1_id,
+            loader2_id: dayData.loader2_id,
+            odometer_start: dayData.odometer_start || 0,
+            odometer_end: dayData.odometer_end || 0,
+            total_distance: dayData.daily_km_manual || 0,
+            machine_hours: dayData.machine_hours || 0,
+            fuel_remaining_start: dayData.fuel_remaining_start || 0,
+            fuel_taken: dayData.fuel_taken || 0,
+            fuel_remaining_end: dayData.fuel_remaining_end || 0,
+            waste_volume_m3: dayData.waste_volume_m3 || 0,
+            total_trips: dayData.waste_tbo_trips || 0,
+            polygon_1: dayData.polygon_1 || '',
+            polygon_2: dayData.polygon_2 || '',
+            polygon_3: dayData.polygon_3 || '',
+            polygon_4: dayData.polygon_4 || '',
+            polygon_5: dayData.polygon_5 || '',
+            is_night_shift: true,
+            after_day: dayData.after_day,
+            status: 'submitted',
+            created_by: req.user.id
+          });
+          
+          savedRecords.push(nightRecord);
+        } else {
+          // Oddiy kun uchun
+          const dayRecord = await TripSheet.create({
+            vehicle_id: vehicleId,
+            date: tripDate.format('YYYY-MM-DD'),
+            trip_number: dayData.trip_number,
+            driver_id: dayData.driver_id,
+            loader1_id: dayData.loader1_id,
+            loader2_id: dayData.loader2_id,
+            odometer_start: dayData.odometer_start || 0,
+            odometer_end: dayData.odometer_end || 0,
+            total_distance: dayData.daily_km_manual || 0,
+            machine_hours: dayData.machine_hours || 0,
+            fuel_remaining_start: dayData.fuel_remaining_start || 0,
+            fuel_taken: dayData.fuel_taken || 0,
+            fuel_remaining_end: dayData.fuel_remaining_end || 0,
+            waste_volume_m3: dayData.waste_volume_m3 || 0,
+            total_trips: dayData.waste_tbo_trips || 0,
+            polygon_1: dayData.polygon_1 || '',
+            polygon_2: dayData.polygon_2 || '',
+            polygon_3: dayData.polygon_3 || '',
+            polygon_4: dayData.polygon_4 || '',
+            polygon_5: dayData.polygon_5 || '',
+            status: 'submitted',
+            created_by: req.user.id
+          });
+          
+          savedRecords.push(dayRecord);
+        }
+      } catch (recordError) {
+        console.error(`Error saving record for day ${dayData.key}:`, recordError);
+        validationErrors.push(`Kun ${dayData.key || dayData.date}: ${recordError.message}`);
+      }
+    }
+    
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ba\'zi yozuvlarni saqlashda xatolik yuz berdi',
+        errors: validationErrors
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: `${savedRecords.length} ta yozuv saqlandi`,
+      data: savedRecords
+    });
+    
+  } catch (error) {
+    console.error('Oylik ma\'lumotlarni saqlashda xatolik:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Oylik ma\'lumotlarni saqlashda xatolik',
+      error: error.message
+    });
+  }
+});
+
+// Kunlik ma'lumotni saqlash
+router.post('/daily/:vehicleId', authenticate, async (req, res) => {
+  try {
+    const { vehicleId } = req.params;
+    const { date, dayData } = req.body;
+    
+    if (!date || !dayData) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sana va kun ma\'lumotlari talab qilinadi'
+      });
+    }
+    
+    // Texnikani tekshirish
+    const vehicle = await Vehicle.findByPk(vehicleId);
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: 'Texnika topilmadi'
+      });
+    }
+    
+    // Kunlik ma'lumotni yaratish yoki yangilash
+    const tripData = {
+      vehicle_id: parseInt(vehicleId),
+      date: date,
+      trip_number: dayData.trip_number || `${date.replace(/-/g, '')}-${vehicleId}-${Date.now()}`,
+      driver_id: dayData.driver_id || null,
+      loader1_id: dayData.loader1_id || null,
+      loader2_id: dayData.loader2_id || null,
+      odometer_start: dayData.odometer_start || 0,
+      odometer_end: dayData.odometer_end || 0,
+      work_hours_volume: dayData.machine_hours || 0,
+      total_trips: dayData.waste_tbo_trips || 0,
+      polygon_1: dayData.polygon_1 || '',
+      polygon_2: dayData.polygon_2 || '',
+      polygon_3: dayData.polygon_3 || '',
+      polygon_4: dayData.polygon_4 || '',
+      polygon_5: dayData.polygon_5 || '',
+      waste_volume_m3: dayData.waste_volume_m3 || 0,
+      fuel_start: dayData.fuel_remaining_start || 0,
+      fuel_refilled: dayData.fuel_taken || 0,
+      fuel_consumption_actual: dayData.fuel_consumed || 0,
+      fuel_end: dayData.fuel_remaining_end || 0,
+      notes: dayData.notes || '',
+      created_by: req.user.id,
+      status: 'submitted'
+    };
+    
+    // Mavjud yozuvni tekshirish
+    const existingTrip = await TripSheet.findOne({
+      where: { 
+        vehicle_id: parseInt(vehicleId), 
+        date: date 
+      }
+    });
+    
+    let tripSheet, created;
+    if (existingTrip) {
+      // Yangilash
+      await existingTrip.update(tripData);
+      tripSheet = existingTrip;
+      created = false;
+    } else {
+      // Yaratish
+      tripSheet = await TripSheet.create(tripData);
+      created = true;
+    }
+    
+    res.json({
+      success: true,
+      message: created ? 'Kunlik ma\'lumot saqlandi' : 'Kunlik ma\'lumot yangilandi',
+      data: tripSheet
+    });
+    
+  } catch (error) {
+    console.error('Kunlik ma\'lumotni saqlashda xatolik:', error);
+    
+    res.status(500).json({
+      success: false,
+      message: 'Kunlik ma\'lumotni saqlashda xatolik',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Server xatoligi'
+    });
+  }
+});
+
+// Kunlik saqlash holatini olish
+router.get('/daily-status/:vehicleId', authenticate, async (req, res) => {
+  try {
+    const { vehicleId } = req.params;
+    const { year, month } = req.query;
+    
+    if (!year || !month) {
+      return res.status(400).json({
+        success: false,
+        message: 'Yil va oy parametrlari talab qilinadi'
+      });
+    }
+    
+    const dailySaveStatus = await TripSheet.getDailySaveStatus(vehicleId, parseInt(year), parseInt(month));
+    
+    res.json({
+      success: true,
+      data: dailySaveStatus
+    });
+    
+  } catch (error) {
+    console.error('Kunlik holat ma\'lumotlarini olishda xatolik:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Kunlik holat ma\'lumotlarini olishda xatolik',
       error: error.message
     });
   }

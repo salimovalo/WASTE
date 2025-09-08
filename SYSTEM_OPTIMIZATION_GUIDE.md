@@ -270,3 +270,8 @@ Tizim to'liq ishga tayyor va optimallashtirilgan. Yuqoridagi tavsiyalarni bosqic
 
 
 
+
+
+
+
+

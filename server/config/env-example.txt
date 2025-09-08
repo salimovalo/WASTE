@@ -1,0 +1,43 @@
+# Ma'lumotlar bazasi sozlamalari
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=waste_management
+DB_USER=waste_user
+DB_PASSWORD=your_secure_password_here
+
+# JWT va xavfsizlik (MUHIM: Bu qiymatlarni o'zgartiring!)
+JWT_SECRET=your_unique_jwt_secret_key_at_least_32_characters_long_2024
+JWT_EXPIRES_IN=24h
+BCRYPT_ROUNDS=12
+
+# Server sozlamalari
+PORT=8000
+NODE_ENV=development
+
+# Frontend URL
+FRONTEND_URL=http://localhost:3000
+
+# Backup sozlamalari
+BACKUP_PATH=./backups
+BACKUP_RETENTION_DAYS=30
+
+# Rate limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Session sozlamalari
+SESSION_SECRET=your_unique_session_secret_key_2024
+SESSION_MAX_AGE=86400000
+
+# Logging
+LOG_LEVEL=INFO
+
+# File upload
+MAX_FILE_SIZE=5242880
+UPLOAD_PATH=./uploads
+
+# Email (ixtiyoriy)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
